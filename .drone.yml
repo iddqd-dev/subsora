@@ -1,0 +1,113 @@
+kind: pipeline
+type: docker
+name: backend
+
+trigger:
+  branch: [main]
+  event: [push]
+  path: [backend/**]
+
+steps:
+  - name: build and push
+    image: plugins/docker
+    settings:
+      username: { from_secret: docker_username }
+      password: { from_secret: docker_password }
+      registry: cicd.zerity.ru:55000
+      repo: cicd.zerity.ru:55000/subsora/backend
+      tags: latest
+      context: backend
+      dockerfile: backend/Dockerfile
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host: { from_secret: ssh_host }
+      username: { from_secret: ssh_user }
+      key: { from_secret: ssh_key }
+      script:
+        - cd ~/subsora
+        - git pull origin main
+        - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
+        - docker-compose pull backend
+        - docker-compose up -d --no-deps backend
+    environment:
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
+
+---
+
+kind: pipeline
+type: docker
+name: frontend
+
+trigger:
+  branch: [main]
+  event: [push]
+  path: [frontend/**]
+
+steps:
+  - name: build and push
+    image: plugins/docker
+    settings:
+      username: { from_secret: docker_username }
+      password: { from_secret: docker_password }
+      registry: cicd.zerity.ru:55000
+      repo: cicd.zerity.ru:55000/subsora/frontend
+      tags: latest
+      context: frontend
+      dockerfile: frontend/Dockerfile
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host: { from_secret: ssh_host }
+      username: { from_secret: ssh_user }
+      key: { from_secret: ssh_key }
+      script:
+        - cd ~/subsora # ЗАМЕНИ
+        - git pull origin main
+        - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
+        - docker-compose pull frontend
+        - docker-compose up -d --no-deps --build frontend
+    environment:
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
+
+---
+kind: pipeline
+type: docker
+name: bot
+
+trigger:
+  branch: [main]
+  event: [push]
+  path: [bot/**]
+
+steps:
+  - name: build and push
+    image: plugins/docker
+    settings:
+      username: { from_secret: docker_username }
+      password: { from_secret: docker_password }
+      registry: cicd.zerity.ru:55000 # ЗАМЕНИ
+      repo: cicd.zerity.ru:55000/subsora/bot # ЗАМЕНИ
+      tags: latest
+      context: bot
+      dockerfile: bot/Dockerfile
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host: { from_secret: ssh_host }
+      username: { from_secret: ssh_user }
+      key: { from_secret: ssh_key }
+      script:
+        - cd ~/subsora # ЗАМЕНИ
+        - git pull origin main
+        - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
+        - docker-compose pull bot
+        - docker-compose up -d --no-deps --build bot
+    environment:
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }

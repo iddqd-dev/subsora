@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: subsora-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: cicd.zerity.ru:55000/subsora/backend:latest
+    container_name: subsora-backend
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy # Ждет, пока БД будет готова
+    networks:
+      - default
+
+  bot:
+    image: cicd.zerity.ru:55000/subsora/bot:latest
+    container_name: subsora-bot
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - backend # Бот может зависеть от бэкенда
+    networks:
+      - default
+
+  frontend:
+    image: cicd.zerity.ru:55000/subsora/frontend:latest
+    container_name: subsora-frontend
+    restart: always
+    ports:
+      - "80:80" # Будем смотреть на порт 80, предполагая, что на сервере больше ничего не работает
+      - "443:443" # Задел на будущее для HTTPS
+    networks:
+      - default
+
+  # Реверс-прокси, который будет "разруливать" трафик
+  nginx-proxy:
+    image: nginx:1.25-alpine
+    container_name: subsora-nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      # - "443:443" # Для HTTPS, пока закомментировано
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - default
+
+volumes:
+  postgres_data:
+    name: subsora_postgres_data
+
+networks:
+  default:
+    name: subsora_network
