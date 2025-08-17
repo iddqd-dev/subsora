@@ -1,0 +1,25 @@
+meta {
+  name: Create Plan (Admin)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/plans/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "name": "Basic Plan",
+    "description": "The second best plan ever",
+    "price": 19.99,
+    "duration_days": 30,
+    "is_active": true
+  }
+}

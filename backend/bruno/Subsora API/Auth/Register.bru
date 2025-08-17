@@ -1,0 +1,27 @@
+meta {
+  name: Register
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "testuser_{{$timestamp}}@example.com",
+    "password": "supersecretpassword",
+    "full_name": "Test User"
+  }
+}
+
+script:post-response {
+    const requestBody = req.getBody();
+    if (requestBody && requestBody.email) {
+      bru.setEnvVar("user_email", requestBody.email);
+      console.log("User email saved: " + requestBody.email);
+    }
+}

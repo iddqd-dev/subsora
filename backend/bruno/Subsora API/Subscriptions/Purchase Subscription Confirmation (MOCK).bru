@@ -1,0 +1,15 @@
+meta {
+  name: Purchase Subscription Confirmation (MOCK)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/transactions/10/confirm_payment_mock
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}

@@ -1,0 +1,23 @@
+meta {
+  name: register-trial
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/bot/register-trial
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-bot-token: {{x-bot-token}}
+}
+
+body:json {
+  {
+    "telegram_id": 1122334454,
+    "full_name": "New Trial User",
+    "username": "newtrialuser"
+  }
+}

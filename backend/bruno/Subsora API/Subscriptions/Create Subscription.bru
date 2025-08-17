@@ -1,0 +1,25 @@
+meta {
+  name: Create Subscription
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/subscriptions/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    // Убедись, что plan_id=1 существует.
+    // Если нет, сначала создай план через "Create Plan (Admin)"
+    // и подставь сюда его ID.
+    // user_id и end_date будут установлены на бэкенде.
+    "plan_id": 1
+  }
+}

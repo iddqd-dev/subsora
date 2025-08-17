@@ -1,0 +1,22 @@
+meta {
+  name: Purchase Subscription
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/subscriptions/purchase
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "plan_id": 2,
+    "coupon_code": ""
+  }
+}

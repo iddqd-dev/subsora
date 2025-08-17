@@ -1,0 +1,15 @@
+meta {
+  name: Get Vpn Stats
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/users/me/vpn-stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}

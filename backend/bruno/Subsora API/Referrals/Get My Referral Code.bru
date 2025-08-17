@@ -1,0 +1,15 @@
+meta {
+  name: Get My Referral Code
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/referrals/my/code
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}

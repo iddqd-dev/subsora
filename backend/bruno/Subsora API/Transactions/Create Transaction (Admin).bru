@@ -1,0 +1,28 @@
+meta {
+  name: Create Transaction (Admin)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/transactions/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    // ID пользователя, который должен существовать.
+    // Например, 1.
+    "user_id": 1, 
+    "amount": 19.99,
+    "currency": "USD",
+    "status": "completed",
+    // ID подписки (опционально). Убедись, что она существует.
+    "subscription_id": 1 
+  }
+}

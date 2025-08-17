@@ -1,0 +1,15 @@
+meta {
+  name: Get Geo
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/misc/geo
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}

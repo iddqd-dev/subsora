@@ -1,0 +1,15 @@
+meta {
+  name: Get user
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/bot/profile/968471683
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-bot-token: {{x-bot-token}}
+}
