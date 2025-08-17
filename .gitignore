@@ -56,6 +56,7 @@ build/
 dist/
 *.egg-info/
 .eggs/
+/alembic/
 
 # Артефакты тестирования
 .pytest_cache/
