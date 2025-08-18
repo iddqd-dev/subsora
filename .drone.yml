@@ -24,7 +24,6 @@ steps:
   # ===========================================================================
   - name: build and push backend
     image: docker:20.10.14
-    # ... (этот шаг не меняется) ...
     volumes: [{name: dockersock, path: /var/run}]
     environment: {DOCKER_HOST: unix:///var/run/docker.sock, DOCKER_USERNAME: {from_secret: docker_username}, DOCKER_PASSWORD: {from_secret: docker_password}}
     commands:
@@ -50,9 +49,9 @@ steps:
         cd ~/subsora
         git pull origin master
         echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
-        docker-compose pull backend
-        docker-compose up -d --no-deps backend
-        echo "✅ Backend deployment successful!"
+        # Обновляем стек в Docker Swarm
+        docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+        echo "✅ Backend service updated in Swarm stack 'subsora'!"
     environment: { DOCKER_USERNAME: { from_secret: docker_username }, DOCKER_PASSWORD: { from_secret: docker_password } }
     when:
       change:
@@ -63,7 +62,6 @@ steps:
   # ===========================================================================
   - name: build and push frontend
     image: docker:20.10.14
-    # ... (этот шаг не меняется) ...
     volumes: [{name: dockersock, path: /var/run}]
     environment: {DOCKER_HOST: unix:///var/run/docker.sock, DOCKER_USERNAME: {from_secret: docker_username}, DOCKER_PASSWORD: {from_secret: docker_password}}
     commands:
@@ -89,9 +87,9 @@ steps:
         cd ~/subsora
         git pull origin master
         echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
-        docker-compose pull frontend
-        docker-compose up -d --no-deps frontend
-        echo "✅ Frontend deployment successful!"
+        # Обновляем стек в Docker Swarm
+        docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+        echo "✅ Frontend service updated in Swarm stack 'subsora'!"
     environment: { DOCKER_USERNAME: { from_secret: docker_username }, DOCKER_PASSWORD: { from_secret: docker_password } }
     when:
       change:
@@ -102,9 +100,8 @@ steps:
   # ===========================================================================
   - name: build and push bot
     image: docker:20.10.14
-    # ... (этот шаг не меняется) ...
     volumes: [{name: dockersock, path: /var/run}]
-    environment: {DOCKER_HOST: unix:///var/run/docker.sock, DOCKER_USERNAME: {from_secret: docker_username}, DOCKER_PASSWORD: {from_secret: docker_password}}
+    environment: {DOCKER_HOST: unix:///var/run/docker.sock, DOCKER_USERNAME: { from_secret: docker_username }, DOCKER_PASSWORD: { from_secret: docker_password }}
     commands:
       - |
         set -e
@@ -128,9 +125,9 @@ steps:
         cd ~/subsora
         git pull origin master
         echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
-        docker-compose pull bot
-        docker-compose up -d --no-deps bot
-        echo "✅ Bot deployment successful!"
+        # Обновляем стек в Docker Swarm
+        docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+        echo "✅ Bot service updated in Swarm stack 'subsora'!"
     environment: { DOCKER_USERNAME: { from_secret: docker_username }, DOCKER_PASSWORD: { from_secret: docker_password } }
     when:
       change:
