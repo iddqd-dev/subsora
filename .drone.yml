@@ -27,7 +27,7 @@ steps:
       key: { from_secret: ssh_key }
       script:
         - cd ~/subsora
-        - git pull origin main
+        - git pull origin master
         - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
         - docker-compose pull backend
         - docker-compose up -d --no-deps backend
@@ -66,10 +66,10 @@ steps:
       key: { from_secret: ssh_key }
       script:
         - cd ~/subsora # ЗАМЕНИ
-        - git pull origin main
+        - git pull origin master
         - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
         - docker-compose pull frontend
-        - docker-compose up -d --no-deps --build frontend
+        - docker-compose up -d --no-deps frontend
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
@@ -104,10 +104,10 @@ steps:
       key: { from_secret: ssh_key }
       script:
         - cd ~/subsora
-        - git pull origin main
+        - git pull origin master
         - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
         - docker-compose pull bot
-        - docker-compose up -d --no-deps --build bot
+        - docker-compose up -d --no-deps bot
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
