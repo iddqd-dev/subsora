@@ -3,7 +3,7 @@ type: docker
 name: backend
 
 trigger:
-  branch: [main]
+  branch: [master]
   event: [push]
   path: [backend/**]
 
@@ -42,7 +42,7 @@ type: docker
 name: frontend
 
 trigger:
-  branch: [main]
+  branch: [master]
   event: [push]
   path: [frontend/**]
 
@@ -80,7 +80,7 @@ type: docker
 name: bot
 
 trigger:
-  branch: [main]
+  branch: [master]
   event: [push]
   path: [bot/**]
 
