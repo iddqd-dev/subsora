@@ -8,7 +8,7 @@ volumes:
 
 services:
   - name: docker
-    image: docker:20.10.14-dind
+    image: docker:dind
     privileged: true
     volumes:
       - name: dockersock
