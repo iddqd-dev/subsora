@@ -46,20 +46,22 @@ steps:
       host: { from_secret: ssh_host }
       username: { from_secret: ssh_user }
       key: { from_secret: ssh_key }
-      # Передаем секреты как параметры плагина
-      DOCKER_USERNAME: { from_secret: docker_username }
-      DOCKER_PASSWORD: { from_secret: docker_password }
-      script:
-        - |
-          set -ex
-          echo "--- Deploying Backend to Swarm ---"
-          # Используем переменные $PLUGIN_*, которые создает плагин
-          echo $PLUGIN_DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $PLUGIN_DOCKER_USERNAME --password-stdin
-          docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
-          echo "✅ Backend service update command sent to Swarm!"
+      # 👇 ВАЖНО: Drone передает секреты в переменные окружения.
+      # Нам нужно их использовать в `script` блоке.
+      # Мы не можем использовать `from_secret` внутри `script`,
+      # поэтому объявляем их здесь.
+      env:
+        DOCKER_USERNAME: { from_secret: docker_username }
+        DOCKER_PASSWORD: { from_secret: docker_password }
+    script:
+      # 👇 Теперь используем переменные, объявленные в `env`
+      # Используем $$ для "экранирования" знака $, чтобы drone его не интерпретировал
+      - echo "$$DOCKER_PASSWORD" | docker login cicd.zerity.ru:55000 -u "$$DOCKER_USERNAME" --password-stdin
+      - docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
+      - echo "✅ Backend service update command sent to Swarm!"
     when:
       change:
-        includes: [backend/**]
+        includes: [ backend/** ]
 
   # ===========================================================================
   # Шаги для FRONTEND
@@ -94,7 +96,7 @@ steps:
         - |
           set -ex
           echo "--- Deploying Frontend to Swarm ---"
-          echo $PLUGIN_DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $PLUGIN_DOCKER_USERNAME --password-stdin
+          echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
           docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/frontend:latest subsora_frontend
           echo "✅ Frontend service update command sent to Swarm!"
     when:
@@ -134,7 +136,7 @@ steps:
         - |
           set -ex
           echo "--- Deploying Bot to Swarm ---"
-          echo $PLUGIN_DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $PLUGIN_DOCKER_USERNAME --password-stdin
+          echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
           docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/bot:latest subsora_bot
           echo "✅ Bot service update command sent to Swarm!"
     when:
