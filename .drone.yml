@@ -47,13 +47,12 @@ steps:
 
   - name: deploy backend
     image: appleboy/drone-ssh
-    # ... (остальная часть шага deploy остается без изменений)
     settings: { host: { from_secret: ssh_host }, username: { from_secret: ssh_user }, key: { from_secret: ssh_key } }
     script:
       - cd ~/subsora
       - git pull origin master
       - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
-      - docker-compose pull backend
+      - docker pull cicd.zerity.ru:55000/subsora/backend
       - docker-compose up -d --no-deps backend
     environment: { DOCKER_USERNAME: { from_secret: docker_username }, DOCKER_PASSWORD: { from_secret: docker_password } }
     when:
