@@ -34,11 +34,11 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
-      # 1. Собираем образ
-      - docker build -t subsora-backend -f backend/Dockerfile ./backend
-      # 2. Логинимся в registry
+      # 1. Логинимся в твой registry
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      # 3. Тегируем образ для пуша в registry
+      # 2. Собираем образ (как ты делал на хосте)
+      - docker build -t subsora-backend -f backend/Dockerfile ./backend
+      # 3. Тегируем его для пуша в registry
       - docker tag subsora-backend cicd.zerity.ru:55000/subsora/backend:latest
       # 4. Пушим образ
       - docker push cicd.zerity.ru:55000/subsora/backend:latest
