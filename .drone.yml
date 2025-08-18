@@ -1,6 +1,6 @@
 kind: pipeline
 type: docker
-name: backend
+name: subsora-ci
 
 volumes:
   - name: dockersock
@@ -8,7 +8,7 @@ volumes:
 
 services:
   - name: docker
-    image: docker:20.10.14-dind # Указал конкретную версию для стабильности
+    image: docker:20.10.14-dind
     privileged: true
     volumes:
       - name: dockersock
@@ -17,40 +17,32 @@ services:
 trigger:
   branch: [master]
   event: [push]
-  path: [backend/**]
 
 steps:
+  # ===========================================================================
+  # Шаги для BACKEND
+  # ===========================================================================
   - name: build and push backend
-    image: docker:20.10.14 # Та же версия, что и у dind
+    image: docker:20.10.14
     volumes:
       - name: dockersock
         path: /var/run
     environment:
       DOCKER_HOST: unix:///var/run/docker.sock
-      DOCKER_USERNAME:
-        from_secret: docker_username
-      DOCKER_PASSWORD:
-        from_secret: docker_password
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
     commands:
-      # Ждем, пока Docker-демон в сервисе dind станет доступен
       - |
         timeout=20
-        while ! docker ps > /dev/null 2>&1; do
-          sleep 1
-          timeout=$(expr $timeout - 1)
-          if [ $timeout -eq 0 ]; then
-            echo "Docker daemon in dind failed to start."
-            exit 1
-          fi
-        done
-      # 1. Логинимся в registry
+        while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 1); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      # 2. Собираем образ
       - docker build -t subsora-backend -f backend/Dockerfile ./backend
-      # 3. Тегируем его для пуша
       - docker tag subsora-backend cicd.zerity.ru:55000/subsora/backend:latest
-      # 4. Пушим образ
       - docker push cicd.zerity.ru:55000/subsora/backend:latest
+    when:
+      change:
+        includes:
+          - backend/**
 
   - name: deploy backend
     image: appleboy/drone-ssh
@@ -67,31 +59,14 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
+    when:
+      change:
+        includes:
+          - backend/**
 
----
-
-kind: pipeline
-type: docker
-name: frontend
-
-volumes:
-  - name: dockersock
-    temp: {}
-
-services:
-  - name: docker
-    image: docker:20.10.14-dind
-    privileged: true
-    volumes:
-      - name: dockersock
-        path: /var/run
-
-trigger:
-  branch: [master]
-  event: [push]
-  path: [frontend/**]
-
-steps:
+  # ===========================================================================
+  # Шаги для FRONTEND
+  # ===========================================================================
   - name: build and push frontend
     image: docker:20.10.14
     volumes:
@@ -99,25 +74,20 @@ steps:
         path: /var/run
     environment:
       DOCKER_HOST: unix:///var/run/docker.sock
-      DOCKER_USERNAME:
-        from_secret: docker_username
-      DOCKER_PASSWORD:
-        from_secret: docker_password
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
     commands:
       - |
         timeout=20
-        while ! docker ps > /dev/null 2>&1; do
-          sleep 1
-          timeout=$(expr $timeout - 1)
-          if [ $timeout -eq 0 ]; then
-            echo "Docker daemon in dind failed to start."
-            exit 1
-          fi
-        done
+        while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 1); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t subsora-frontend -f frontend/Dockerfile ./frontend
       - docker tag subsora-frontend cicd.zerity.ru:55000/subsora/frontend:latest
       - docker push cicd.zerity.ru:55000/subsora/frontend:latest
+    when:
+      change:
+        includes:
+          - frontend/**
 
   - name: deploy frontend
     image: appleboy/drone-ssh
@@ -134,31 +104,14 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
+    when:
+      change:
+        includes:
+          - frontend/**
 
----
-
-kind: pipeline
-type: docker
-name: bot
-
-volumes:
-  - name: dockersock
-    temp: {}
-
-services:
-  - name: docker
-    image: docker:20.10.14-dind
-    privileged: true
-    volumes:
-      - name: dockersock
-        path: /var/run
-
-trigger:
-  branch: [master]
-  event: [push]
-  path: [bot/**]
-
-steps:
+  # ===========================================================================
+  # Шаги для BOT
+  # ===========================================================================
   - name: build and push bot
     image: docker:20.10.14
     volumes:
@@ -166,25 +119,20 @@ steps:
         path: /var/run
     environment:
       DOCKER_HOST: unix:///var/run/docker.sock
-      DOCKER_USERNAME:
-        from_secret: docker_username
-      DOCKER_PASSWORD:
-        from_secret: docker_password
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
     commands:
       - |
         timeout=20
-        while ! docker ps > /dev/null 2>&1; do
-          sleep 1
-          timeout=$(expr $timeout - 1)
-          if [ $timeout -eq 0 ]; then
-            echo "Docker daemon in dind failed to start."
-            exit 1
-          fi
-        done
+        while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 1); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t subsora-bot -f bot/Dockerfile ./bot
       - docker tag subsora-bot cicd.zerity.ru:55000/subsora/bot:latest
       - docker push cicd.zerity.ru:55000/subsora/bot:latest
+    when:
+      change:
+        includes:
+          - bot/**
 
   - name: deploy bot
     image: appleboy/drone-ssh
@@ -201,3 +149,7 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
+    when:
+      change:
+        includes:
+          - bot/**
