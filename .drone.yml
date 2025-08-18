@@ -53,10 +53,94 @@ steps:
       - cd ~/subsora
       - git pull origin master
       - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
-      - docker pull cicd.zerity.ru:55000/subsora/backend
+      - docker-compose pull backend
       - docker-compose up -d --no-deps backend
     environment: { DOCKER_USERNAME: { from_secret: docker_username }, DOCKER_PASSWORD: { from_secret: docker_password } }
     when:
       change:
         includes:
           - backend/**
+
+  # ===========================================================================
+  # Шаги для FRONTEND
+  # ===========================================================================
+  - name: build and push frontend
+    image: docker:20.10.14
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
+    commands:
+      - |
+        timeout=20
+        while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 1); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      # --- ВОТ ОНО, РЕШЕНИЕ ---
+      - docker build --network=host -t subsora-frontend -f frontend/Dockerfile ./frontend
+      - docker tag subsora-frontend cicd.zerity.ru:55000/subsora/frontend:latest
+      - docker push cicd.zerity.ru:55000/subsora/frontend:latest
+    when:
+      change:
+        includes:
+          - frontend/**
+
+  - name: deploy frontend
+    image: appleboy/drone-ssh
+    # ... (остальная часть шага deploy остается без изменений)
+    settings: { host: { from_secret: ssh_host }, username: { from_secret: ssh_user }, key: { from_secret: ssh_key } }
+    script:
+      - cd ~/subsora
+      - git pull origin master
+      - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
+      - docker-compose pull frontend
+      - docker-compose up -d --no-deps frontend
+    environment: { DOCKER_USERNAME: { from_secret: docker_username }, DOCKER_PASSWORD: { from_secret: docker_password } }
+    when:
+      change:
+        includes:
+          - frontend/**
+
+  # ===========================================================================
+  # Шаги для BOT
+  # ===========================================================================
+  - name: build and push bot
+    image: docker:20.10.14
+    volumes:
+      - name: dockersock
+        path: /var/run
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
+    commands:
+      - |
+        timeout=20
+        while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 1); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      # --- ВОТ ОНО, РЕШЕНИЕ ---
+      - docker build --network=host -t subsora-bot -f bot/Dockerfile ./bot
+      - docker tag subsora-bot cicd.zerity.ru:55000/subsora/bot:latest
+      - docker push cicd.zerity.ru:55000/subsora/bot:latest
+    when:
+      change:
+        includes:
+          - bot/**
+
+  - name: deploy bot
+    image: appleboy/drone-ssh
+    # ... (остальная часть шага deploy остается без изменений)
+    settings: { host: { from_secret: ssh_host }, username: { from_secret: ssh_user }, key: { from_secret: ssh_key } }
+    script:
+      - cd ~/subsora
+      - git pull origin master
+      - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
+      - docker-compose pull bot
+      - docker-compose up -d --no-deps bot
+    environment: { DOCKER_USERNAME: { from_secret: docker_username }, DOCKER_PASSWORD: { from_secret: docker_password } }
+    when:
+      change:
+        includes:
+          - bot/**
