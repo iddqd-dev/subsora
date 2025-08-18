@@ -56,8 +56,11 @@ steps:
     script:
       # 👇 Теперь используем переменные, объявленные в `env`
       # Используем $$ для "экранирования" знака $, чтобы drone его не интерпретировал
+      - set -x
       - echo "$$DOCKER_PASSWORD" | docker login cicd.zerity.ru:55000 -u "$$DOCKER_USERNAME" --password-stdin
+      - docker pull cicd.zerity.ru:55000/subsora/backend:latest
       - docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
+      - docker image prune -f
       - echo "✅ Backend service update command sent to Swarm!"
     when:
       change:
