@@ -71,16 +71,26 @@ trigger:
   path: [frontend/**]
 
 steps:
-  - name: build and push
-    image: plugins/docker
-    settings:
-      username: { from_secret: docker_username }
-      password: { from_secret: docker_password }
-      registry: cicd.zerity.ru:55000
-      repo: cicd.zerity.ru:55000/subsora/frontend
-      tags: latest
-      context: frontend
-      dockerfile: frontend/Dockerfile
+  - name: build and push frontend
+    image: docker # Используем Docker-клиент
+    volumes:
+      - name: dockersock # Подключаемся к сокету сервиса dind
+        path: /var/run
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock # Говорим клиенту, где найти сервер
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: docker_password
+    commands:
+      # 1. Логинимся в твой registry
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      # 2. Собираем образ (как ты делал на хосте)
+      - docker build -t subsora-frontend -f frontend/Dockerfile ./frontend
+      # 3. Тегируем его для пуша в registry
+      - docker tag subsora-frontend cicd.zerity.ru:55000/subsora/frontend:latest
+      # 4. Пушим образ
+      - docker push cicd.zerity.ru:55000/subsora/frontend:latest
 
   - name: deploy
     image: appleboy/drone-ssh
