@@ -34,7 +34,7 @@ services:
     env_file:
       - .env
     depends_on:
-      - backend # Бот может зависеть от бэкенда
+      - backend
     networks:
       - default
 
@@ -43,12 +43,11 @@ services:
     container_name: subsora-frontend
     restart: always
     ports:
-      - "80:80" # Будем смотреть на порт 80, предполагая, что на сервере больше ничего не работает
-      - "443:443" # Задел на будущее для HTTPS
+      - "80:80"
+      - "443:443"
     networks:
       - default
 
-  # Реверс-прокси, который будет "разруливать" трафик
   nginx-proxy:
     image: nginx:1.25-alpine
     container_name: subsora-nginx-proxy
