@@ -2,35 +2,59 @@ kind: pipeline
 type: docker
 name: backend
 
+# Определяем тома для связи между шагами и сервисом
+volumes:
+  - name: dockersock
+    temp: {}
+
+# Запускаем Docker-in-Docker как сервис
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    volumes:
+      - name: dockersock
+        path: /var/run
+
 trigger:
   branch: [master]
   event: [push]
   path: [backend/**]
 
 steps:
-  - name: build and push
-    image: plugins/docker
-    settings:
-      username: { from_secret: docker_username }
-      password: { from_secret: docker_password }
-      registry: cicd.zerity.ru:55000
-      repo: cicd.zerity.ru:55000/subsora/backend
-      tags: latest
-      context: backend
-      dockerfile: backend/Dockerfile
+  - name: build and push backend
+    image: docker # Используем Docker-клиент
+    volumes:
+      - name: dockersock # Подключаемся к сокету сервиса dind
+        path: /var/run
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock # Говорим клиенту, где найти сервер
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: docker_password
+    commands:
+      # 1. Логинимся в твой registry
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      # 2. Собираем образ (как ты делал на хосте)
+      - docker build -t subsora-backend -f backend/Dockerfile ./backend
+      # 3. Тегируем его для пуша в registry
+      - docker tag subsora-backend cicd.zerity.ru:55000/subsora/backend:latest
+      # 4. Пушим образ
+      - docker push cicd.zerity.ru:55000/subsora/backend:latest
 
-  - name: deploy
+  - name: deploy backend
     image: appleboy/drone-ssh
     settings:
       host: { from_secret: ssh_host }
       username: { from_secret: ssh_user }
       key: { from_secret: ssh_key }
-      script:
-        - cd ~/subsora
-        - git pull origin master
-        - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
-        - docker-compose pull backend
-        - docker-compose up -d --no-deps backend
+    script:
+      - cd ~/subsora
+      - git pull origin master
+      - echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
+      - docker-compose pull backend
+      - docker-compose up -d --no-deps backend
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
