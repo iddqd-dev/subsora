@@ -23,7 +23,7 @@ steps:
   # Шаги для BACKEND
   # ===========================================================================
   - name: build and push backend
-    image: docker:20.10.14
+    image: docker
     volumes:
       - name: dockersock
         path: /var/run
@@ -31,7 +31,7 @@ steps:
       DOCKER_HOST: unix:///var/run/docker.sock
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
-    commands:
+    script:
       - |
         timeout=20
         while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 1); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
