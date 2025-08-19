@@ -50,6 +50,7 @@ steps:
       script:
         - echo "$DOCKER_PASSWORD" | docker login cicd.zerity.ru:55000 -u "$DOCKER_USERNAME" --password-stdin
         - docker pull cicd.zerity.ru:55000/subsora/backend:latest
+        - cd ~/subsora
         - |
           if docker stack ls --format "{{.Name}}" | grep -q "^subsora$"; then
             echo "🗑️ Removing existing stack..."
