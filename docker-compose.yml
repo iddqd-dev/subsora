@@ -84,3 +84,7 @@ volumes:
 networks:
   default:
     name: subsora_network
+
+secrets:
+  subsora_backend_env:
+    external: true
