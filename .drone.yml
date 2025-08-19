@@ -51,6 +51,21 @@ steps:
         - echo "$DOCKER_PASSWORD" | docker login cicd.zerity.ru:55000 -u "$DOCKER_USERNAME" --password-stdin
         - docker pull cicd.zerity.ru:55000/subsora/backend:latest
         - cd ~/subsora
+        # 👇 Проверяем наличие .env файла
+        - |
+          if [ ! -f /root/subsora/backend/.env ]; then
+            echo "❌ .env file not found at /root/subsora/backend/.env"
+            exit 1
+          fi
+          echo "✅ .env file found"
+        # 👇 Создаем/обновляем Docker secret
+        - |
+          # Удаляем старый секрет если существует (игнорируем ошибки)
+          docker secret rm subsora_backend_env 2>/dev/null || echo "No existing secret to remove"
+          
+          # Создаем новый секрет из .env файла
+          docker secret create subsora_backend_env /root/subsora/backend/.env
+          echo "✅ Docker secret created"
         - |
           if docker stack ls --format "{{.Name}}" | grep -q "^subsora$"; then
             echo "🗑️ Removing existing stack..."
@@ -70,7 +85,7 @@ steps:
               echo "✅ Stack cleanup completed"
             fi
             
-            sleep 10  # Дополнительная пауза
+            sleep 10
           fi
         - echo "🚀 Deploying fresh stack..."
         - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
@@ -105,46 +120,6 @@ steps:
     when:
       change:
         includes: [ backend/** ]
-
-  # ===========================================================================
-  # Шаги для FRONTEND
-  # ===========================================================================
-  - name: build and push frontend
-    image: docker:20.10.14
-    volumes: [{name: dockersock, path: /var/run}]
-    environment: {DOCKER_HOST: unix:///var/run/docker.sock, DOCKER_USERNAME: {from_secret: docker_username}, DOCKER_PASSWORD: {from_secret: docker_password}}
-    commands:
-      - |
-        set -e
-        timeout=20
-        while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 1); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
-        echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-        cd frontend
-        docker build --network=host -t subsora-frontend .
-        docker tag subsora-frontend cicd.zerity.ru:55000/subsora/frontend:latest
-        docker push cicd.zerity.ru:55000/subsora/frontend:latest
-    when:
-      change:
-        includes: [frontend/**]
-
-  - name: deploy frontend
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host }
-      username: { from_secret: ssh_user }
-      key: { from_secret: ssh_key }
-      DOCKER_USERNAME: { from_secret: docker_username }
-      DOCKER_PASSWORD: { from_secret: docker_password }
-      script:
-        - |
-          set -ex
-          echo "--- Deploying Frontend to Swarm ---"
-          echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
-          docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/frontend:latest subsora_frontend
-          echo "✅ Frontend service update command sent to Swarm!"
-    when:
-      change:
-        includes: [frontend/**]
 
   # ===========================================================================
   # Шаги для BOT
