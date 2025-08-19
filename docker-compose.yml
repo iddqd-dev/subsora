@@ -27,7 +27,6 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-      - /root/subsora/backend/.env:/app/backend/.env:ro
     env_file:
       - .env
     environment:
@@ -88,4 +87,5 @@ networks:
 
 secrets:
   subsora_backend_env:
-    external: true
+    file: backend/.env
+    name: subsora_backend_env_00000000001
