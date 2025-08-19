@@ -41,25 +41,21 @@ steps:
         includes: [backend/**]
 
   - name: deploy backend
-    image: docker:20.10.14
+    image: appleboy/drone-ssh
+    settings:
+      host: { from_secret: ssh_host }
+      username: { from_secret: ssh_user }
+      key: { from_secret: ssh_key }
+      envs: [ DOCKER_USERNAME, DOCKER_PASSWORD ]
+      script:
+        - echo "$DOCKER_PASSWORD" | docker login cicd.zerity.ru:55000 -u "$DOCKER_USERNAME" --password-stdin
+        - docker pull cicd.zerity.ru:55000/subsora/backend:latest
+        - docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
+        - docker image prune -f
     environment:
-      SSH_HOST: { from_secret: ssh_host }
-      SSH_USER: { from_secret: ssh_user }
-      SSH_KEY: { from_secret: ssh_key }
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
-    commands:
-      - apk add --no-cache openssh-client
-      - mkdir -p ~/.ssh
-      - echo "$SSH_KEY" > ~/.ssh/id_rsa
-      - chmod 600 ~/.ssh/id_rsa
-      - ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
-      - |
-        ssh $SSH_USER@$SSH_HOST "
-          echo '$DOCKER_PASSWORD' | docker login cicd.zerity.ru:55000 -u '$DOCKER_USERNAME' --password-stdin &&
-          docker pull cicd.zerity.ru:55000/subsora/backend:latest &&
-          docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend &&
-          docker image prune -f
+
 
   # ===========================================================================
   # Шаги для FRONTEND
