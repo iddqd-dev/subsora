@@ -30,7 +30,7 @@ steps:
       - |
         set -e
         timeout=20
-        while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 1); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
+        while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 2); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
         echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
         cd backend
         docker build --network=host -t subsora-backend .
@@ -154,6 +154,8 @@ steps:
         - |
           set -ex
           echo "--- Deploying Bot to Swarm ---"
+          cd ~/subsora
+          git
           echo $$DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $$DOCKER_USERNAME --password-stdin
           docker service update --with-registry-auth --force --image cicd.zerity.ru:55000/subsora/bot:latest subsora_bot
           echo "✅ Bot service update command sent to Swarm!"
