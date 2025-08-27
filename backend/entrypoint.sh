@@ -7,9 +7,6 @@ while ! nc -z "$DB_HOST" "$DB_PORT"; do
 done
 echo "PostgreSQL started"
 
-#!/bin/sh
-set -e  # Если команда упадёт — контейнер завершится
-
 # Применяем миграции Alembic
 echo "Running Alembic migrations..."
 alembic -c /app/backend/alembic.ini upgrade head
