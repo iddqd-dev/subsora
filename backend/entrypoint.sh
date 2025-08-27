@@ -7,9 +7,13 @@ while ! nc -z "$DB_HOST" "$DB_PORT"; do
 done
 echo "PostgreSQL started"
 
-# 👇 ИСПРАВЛЕНИЕ: Указываем правильный путь к конфигу alembic
-echo "Running database migrations..."
+#!/bin/sh
+set -e  # Если команда упадёт — контейнер завершится
+
+# Применяем миграции Alembic
+echo "Running Alembic migrations..."
 alembic -c /app/backend/alembic.ini upgrade head
 
-echo "Starting FastAPI server..."
-exec "$@"
+# Запускаем приложение
+echo "Starting Uvicorn..."
+exec uvicorn main:app --host 0.0.0.0 --port 8000
