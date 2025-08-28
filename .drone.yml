@@ -33,17 +33,12 @@ steps:
         while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 2); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
         echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
         cd backend
-        # Проверим что .env существует перед сборкой
-        ls -la .env
-        echo "=== .env content preview ==="
-        head -3 .env
-        echo "=========================="
+        
+        
+        
         docker build --network=host -t subsora-backend . --no-cache
         docker tag subsora-backend cicd.zerity.ru:55000/subsora/backend:latest
         docker push cicd.zerity.ru:55000/subsora/backend:latest
-        # Проверим что .env попал в контейнер
-        docker run --rm subsora-backend ls -la /app/.env || echo "❌ .env not found in container"
-        docker run --rm subsora-backend head -1 /app/.env || echo "❌ Cannot read .env in container"
     when:
       change:
         includes: [backend/**]

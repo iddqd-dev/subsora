@@ -25,17 +25,15 @@ services:
     restart: always
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
-    env_file:
-      - .env
     environment:
       - DB_HOST=db
       - DB_PORT=5432
     secrets:
       - source: subsora_backend_env
         target: /app/backend/.env
-        mode: 0400
+        uid: "9000"
+        gid: "9000"
+        mode: 0440
     depends_on:
       - db
     networks:
@@ -87,5 +85,5 @@ networks:
 
 secrets:
   subsora_backend_env:
-    file: backend/.env
+    file: /root/subsora/backend/.env
     name: subsora_backend_env_00000000001
