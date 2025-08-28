@@ -1,6 +1,6 @@
 FROM python:3.11-slim
-WORKDIR /app
-ENV PYTHONPATH=/app
+WORKDIR /app/backend
+ENV PYTHONPATH=/app/backend
 RUN mkdir /app/backend
 COPY requirements.txt /app/backend/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
