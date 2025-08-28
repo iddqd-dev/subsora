@@ -40,6 +40,9 @@ steps:
         while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 2); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
         echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
         apk add --no-cache openssh-client
+        rm -rf ~/subsora
+        git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora
+        cd ~/subsora
         mkdir -p ~/.ssh
         echo "$SSH_KEY" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
