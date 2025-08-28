@@ -1,5 +1,10 @@
+import os
+
 from pydantic_settings import BaseSettings
 from typing import Optional, List, Tuple
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ENV_FILE_PATH = os.path.join(BASE_DIR, ".env")
 
 
 class Settings(BaseSettings):
@@ -53,7 +58,7 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_SECRET: str
 
     class Config:
-        env_file = ".env"
+        env_file = ENV_FILE_PATH
         case_sensitive = True
 
 
