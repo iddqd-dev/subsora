@@ -39,14 +39,11 @@ steps:
         timeout=20
         while ! docker ps > /dev/null 2>&1; do sleep 1; timeout=$(expr $timeout - 2); if [ $timeout -eq 0 ]; then echo "Dind failed to start."; exit 1; fi; done
         echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-        
         apk add --no-cache openssh-client
-
         mkdir -p ~/.ssh
         echo "$SSH_KEY" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         echo "StrictHostKeyChecking no" >> ~/.ssh/config
-        
         cd backend
         scp $SSH_USER@$SSH_HOST:/root/subsora/backend/.env ./
         echo "✅ .env copied from production"
