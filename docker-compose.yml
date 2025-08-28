@@ -37,8 +37,6 @@ services:
     image: cicd.zerity.ru:55000/subsora/bot:latest
     container_name: subsora-bot
     restart: always
-    env_file:
-      - .env
     depends_on:
       - backend
     networks:
