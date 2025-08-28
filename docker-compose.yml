@@ -33,44 +33,44 @@ services:
     networks:
       - default
 
-  bot:
-    image: cicd.zerity.ru:55000/subsora/bot:latest
-    container_name: subsora-bot
-    restart: always
-    depends_on:
-      - backend
-    networks:
-      - default
-
-  frontend:
-    image: cicd.zerity.ru:55000/subsora/frontend:latest
-    container_name: subsora-frontend
-    restart: always
-    ports:
-      - "8880:80"
-      - "8443:443"
-    networks:
-      - default
-
-  nginx-proxy:
-    image: nginx:1.25-alpine
-    container_name: subsora-nginx-proxy
-    restart: always
-    ports:
-      - "80:80"
-      # - "443:443"
-    volumes:
-      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - default
-
-volumes:
-  postgres_data:
-    name: subsora_postgres_data
-
-networks:
-  default:
-    name: subsora_network
+#  bot:
+#    image: cicd.zerity.ru:55000/subsora/bot:latest
+#    container_name: subsora-bot
+#    restart: always
+#    depends_on:
+#      - backend
+#    networks:
+#      - default
+#
+#  frontend:
+#    image: cicd.zerity.ru:55000/subsora/frontend:latest
+#    container_name: subsora-frontend
+#    restart: always
+#    ports:
+#      - "8880:80"
+#      - "8443:443"
+#    networks:
+#      - default
+#
+#  nginx-proxy:
+#    image: nginx:1.25-alpine
+#    container_name: subsora-nginx-proxy
+#    restart: always
+#    ports:
+#      - "80:80"
+#      # - "443:443"
+#    volumes:
+#      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+#    depends_on:
+#      - frontend
+#      - backend
+#    networks:
+#      - default
+#
+#volumes:
+#  postgres_data:
+#    name: subsora_postgres_data
+#
+#networks:
+#  default:
+#    name: subsora_network
