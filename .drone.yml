@@ -79,7 +79,6 @@ steps:
               sleep 5
               timeout=$((timeout - 5))
             done
-            
             if [ $timeout -eq 0 ]; then
               echo "⚠️ Cleanup timeout, but proceeding..."
             else
