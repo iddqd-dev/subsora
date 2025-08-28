@@ -51,7 +51,7 @@ steps:
         scp $SSH_USER@$SSH_HOST:/root/subsora/backend/.env ./
         echo "✅ .env copied from production"
         ls -la .env
-        
+        grep -i "BACKEND_CORS_ORIGINS" .env
         docker build --network=host -t subsora-backend . --no-cache
         docker tag subsora-backend cicd.zerity.ru:55000/subsora/backend:latest
         docker push cicd.zerity.ru:55000/subsora/backend:latest
