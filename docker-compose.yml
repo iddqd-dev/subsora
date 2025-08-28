@@ -3,74 +3,94 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: subsora-db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Изменил на 5433, чтобы избежать конфликта
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: subsora
-    restart: always
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.role == manager  # Или убери если у тебя один нод
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d subsora"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - subsora_network
 
   backend:
     image: cicd.zerity.ru:55000/subsora/backend:latest
-    container_name: subsora-backend
-    restart: always
     ports:
       - "8000:8000"
     environment:
       - DB_HOST=db
-      - DB_PORT=5432
+      - DB_PORT=5432  # Внутри контейнера остается 5432
+      # Добавь остальные переменные из .env
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/subsora
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: start-first
     depends_on:
       - db
     networks:
-      - default
+      - subsora_network
 
 #  bot:
 #    image: cicd.zerity.ru:55000/subsora/bot:latest
-#    container_name: subsora-bot
-#    restart: always
+#    deploy:
+#      restart_policy:
+#        condition: any
 #    depends_on:
 #      - backend
 #    networks:
-#      - default
+#      - subsora_network
 #
 #  frontend:
 #    image: cicd.zerity.ru:55000/subsora/frontend:latest
-#    container_name: subsora-frontend
-#    restart: always
 #    ports:
 #      - "8880:80"
 #      - "8443:443"
+#    deploy:
+#      restart_policy:
+#        condition: any
 #    networks:
-#      - default
+#      - subsora_network
 #
 #  nginx-proxy:
 #    image: nginx:1.25-alpine
-#    container_name: subsora-nginx-proxy
-#    restart: always
 #    ports:
-#      - "80:80"
-#      # - "443:443"
+#      - "8080:80"  # Изменил на 8080, чтобы избежать конфликта с основным nginx
 #    volumes:
 #      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+#    deploy:
+#      restart_policy:
+#        condition: any
 #    depends_on:
 #      - frontend
 #      - backend
 #    networks:
-#      - default
-#
+#      - subsora_network
+
 volumes:
   postgres_data:
-    name: subsora_postgres_data
 
 networks:
-  default:
-    name: subsora_network
+  subsora_network:
+    driver: overlay
+    attachable: true
