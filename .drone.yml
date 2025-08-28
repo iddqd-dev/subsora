@@ -5,19 +5,22 @@ name: subsora-backend
 steps:
   # Сборка и пуш Docker образа
   - name: docker-build-push
-    image: plugins/docker
-    settings:
-      registry: cicd.zerity.ru:55000
-      repo: cicd.zerity.ru:55000/subsora/backend
-      tags:
-        - latest
-        - ${DRONE_COMMIT_SHA}
-      username:
+    image: docker:dind
+    volumes:
+      - name: docker-sock
+        path: /var/run/docker.sock
+    environment:
+      DOCKER_USERNAME:
         from_secret: docker_username
-      password:
+      DOCKER_PASSWORD:
         from_secret: docker_password
-      dockerfile: backend/Dockerfile
-      context: backend/
+    commands:
+      - cd backend
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      - docker build -t cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA} .
+      - docker tag cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA} cicd.zerity.ru:55000/subsora/backend:latest
+      - docker push cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA}
+      - docker push cicd.zerity.ru:55000/subsora/backend:latest
 
   # Деплой на сервер
   - name: deploy
