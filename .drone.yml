@@ -6,15 +6,15 @@ steps:
   # Сборка и пуш Docker образа
   - name: docker-build-push
     image: docker:dind
-    volumes:
-      - name: docker-sock
-        path: /var/run/docker.sock
+    privileged: true
     environment:
       DOCKER_USERNAME:
         from_secret: docker_username
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
+      - dockerd --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2375 &
+      - sleep 5
       - cd backend
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA} .
