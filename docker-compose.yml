@@ -67,10 +67,10 @@ services:
 #    networks:
 #      - default
 #
-#volumes:
-#  postgres_data:
-#    name: subsora_postgres_data
-#
-#networks:
-#  default:
-#    name: subsora_network
+volumes:
+  postgres_data:
+    name: subsora_postgres_data
+
+networks:
+  default:
+    name: subsora_network
