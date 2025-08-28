@@ -28,12 +28,6 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=5432
-    secrets:
-      - source: subsora_backend_env
-        target: /app/backend/.env
-        uid: "9000"
-        gid: "9000"
-        mode: 0440
     depends_on:
       - db
     networks:
@@ -82,8 +76,3 @@ volumes:
 networks:
   default:
     name: subsora_network
-
-secrets:
-  subsora_backend_env:
-    file: /root/subsora/backend/.env
-    name: subsora_backend_env_00000000001
