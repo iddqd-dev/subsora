@@ -30,41 +30,23 @@ steps:
       key:
         from_secret: ssh_key
       script:
-        # Устанавливаем переменные для чистоты кода
-        - export BACKEND_IMAGE="cicd.zerity.ru:55000/subsora/backend:latest"
-        - export STACK_NAME="subsora"
-        - export BACKEND_SERVICE="${STACK_NAME}_backend"
-
         - echo "Creating subsora directory if not exists..."
         - mkdir -p /root/subsora
         - cd /root/subsora
-
         - echo "Updating repository..."
         - if [ -d ".git" ]; then git pull origin main || git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
-
-        # Шаг 1: Принудительный Pull (Убеждаемся, что Swarm нода имеет свежий образ)
-        - echo "Pulling new backend image: $BACKEND_IMAGE"
-        - docker pull $BACKEND_IMAGE
-
+        - echo "Pulling new backend image..."
+        - docker pull cicd.zerity.ru:55000/subsora/backend:latest
         - echo "Exporting environment variables from .env file..."
         - export $(cat .env | grep -v '^#' | xargs)
-
-        # Шаг 2: Принудительное обновление сервиса
-        # Используем docker service update --force, чтобы гарантировать, что Swarm
-        # начнет Rolling Update, даже если тег 'latest' не изменил своего ID
-        - echo "Updating Docker Swarm service for $BACKEND_SERVICE..."
-        - docker service update \
-          --force \
-          --image $BACKEND_IMAGE \
-          $BACKEND_SERVICE \
-          --with-registry-auth
-
+        - echo "Deploying stack with exported variables..."
+        - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
         - echo "Waiting for services to update..."
         - sleep 20
         - echo "Checking stack services:"
-        - docker stack services $STACK_NAME
+        - docker stack services subsora
         - echo "Checking service tasks:"
-        - docker service ps $BACKEND_SERVICE --no-trunc
+        - docker service ps subsora_backend --no-trunc
         - echo "Waiting a bit more for backend to be ready..."
         - sleep 10
         - echo "Testing backend health (may take time for rolling update):"
