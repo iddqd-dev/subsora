@@ -1,6 +1,6 @@
 FROM python:3.11-slim
-WORKDIR /app/backend
-ENV PYTHONPATH=/app/backend
+WORKDIR /app
+ENV PYTHONPATH=/app
 
 # Устанавливаем netcat для проверки готовности БД
 RUN apt-get update && apt-get install -y netcat-traditional && rm -rf /var/lib/apt/lists/*
