@@ -94,17 +94,17 @@ services:
 #    networks:
 #      - subsora_network
 #
-#  frontend:
-#    image: cicd.zerity.ru:55000/subsora/frontend:latest
-#    ports:
-#      - "8880:80"
-#      - "8443:443"
-#    deploy:
-#      restart_policy:
-#        condition: any
-#    networks:
-#      - subsora_network
-#
+  frontend:
+    image: cicd.zerity.ru:55000/subsora/frontend:latest
+    ports:
+      - "8880:80"
+      - "8443:443"
+    deploy:
+      restart_policy:
+        condition: any
+    networks:
+      - subsora_network
+
   nginx-proxy:
     image: nginx:1.25-alpine
     ports:
