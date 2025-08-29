@@ -22,7 +22,7 @@ services:
     networks:
       - subsora_network
     command: |
-      bash -c '
+        bash -c '
         echo "=== Starting PostgreSQL Debug ===" >&2
         echo "POSTGRES_USER: $$POSTGRES_USER" >&2
         echo "POSTGRES_PASSWORD: $$POSTGRES_PASSWORD" >&2  
