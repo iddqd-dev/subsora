@@ -6,37 +6,43 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     ports:
-      - "5433:5432"  # Изменил на 5433, чтобы избежать конфликта
+      - target: 5432
+        published: 5433
+        protocol: tcp
+        mode: host
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: subsora
+      PGDATA: /var/lib/postgresql/data/pgdata
     deploy:
       restart_policy:
         condition: any
         delay: 5s
         max_attempts: 3
+      replicas: 1
       placement:
         constraints:
-          - node.role == manager  # Или убери если у тебя один нод
+          - node.role == manager
     healthcheck:
-      #test: ["CMD-SHELL", "pg_isready -U postgres -d subsora"]
-      #interval: 10s
-      #timeout: 5s
-      #retries: 5
-      disable: true
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d subsora" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - subsora_network
 
   backend:
     image: cicd.zerity.ru:55000/subsora/backend:latest
     ports:
-      - "8000:8000"
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: host
     environment:
       - DB_HOST=db
       - DB_PORT=5432
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/subsora
-      # Добавляем обязательные переменные с дефолтными значениями
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-dummy_token}
       - TELEGRAM_BOT_SECRET=${TELEGRAM_BOT_SECRET:-dummy_secret}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecret}
@@ -48,23 +54,19 @@ services:
       - REFRESH_TOKEN_EXPIRE_DAYS=30
       - ENVIRONMENT=production
       - DEBUG=false
-      # VPN панель
       - VPN_PANEL_URL=${VPN_PANEL_URL:-https://domain.com}
       - VPN_PANEL_PORT=${VPN_PANEL_PORT:-8002}
       - VPN_PANEL_USER=${VPN_PANEL_USER:-admin}
       - VPN_PANEL_PASSWORD=${VPN_PANEL_PASSWORD:-password}
       - VPN_PANEL_SSL=${VPN_PANEL_SSL:-true}
-      # Email настройки (опциональные)
       - SMTP_TLS=${SMTP_TLS:-true}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - EMAILS_FROM_EMAIL=${EMAILS_FROM_EMAIL:-}
-      # Payment настройки (опциональные)
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
-      # Redis (опциональный)
       - REDIS_URL=${REDIS_URL:-}
     deploy:
       restart_policy:
