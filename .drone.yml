@@ -3,7 +3,6 @@ type: docker
 name: subsora-backend
 
 steps:
-  # Сборка и пуш Docker образа
   - name: docker-build-push
     image: docker:dind
     privileged: true
@@ -23,7 +22,6 @@ steps:
       - docker push cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA}
       - docker push cicd.zerity.ru:55000/subsora/backend:latest
 
-  # Деплой на сервер
   - name: deploy
     image: appleboy/drone-ssh
     settings:
