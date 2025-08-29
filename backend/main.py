@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
 
-from app.api.router import api_router
+from backend.app.api.router import api_router
 from app.core.config import settings
 from app.core.exceptions import database_exception_handler, validation_exception_handler
 from app.core.middleware import LoggingMiddleware
