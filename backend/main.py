@@ -2,13 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
 
-from backend.app.api.router import api_router
+from app.api.router import api_router
 from app.core.config import settings
 from app.core.exceptions import database_exception_handler, validation_exception_handler
 from app.core.middleware import LoggingMiddleware
 import logging
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
