@@ -17,9 +17,7 @@ steps:
       - until docker info; do sleep 1; done
       - cd backend
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      - docker build -t cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA} .
-      - docker tag cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA} cicd.zerity.ru:55000/subsora/backend:latest
-      - docker push cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA}
+      - docker build -t cicd.zerity.ru:55000/subsora/backend:latest .
       - docker push cicd.zerity.ru:55000/subsora/backend:latest
 
   - name: deploy
@@ -32,23 +30,30 @@ steps:
       key:
         from_secret: ssh_key
       script:
+        - export BACKEND_IMAGE="cicd.zerity.ru:55000/subsora/backend:latest"
+        - export STACK_NAME="subsora"
+        - export BACKEND_SERVICE="${STACK_NAME}_backend"
         - echo "Creating subsora directory if not exists..."
         - mkdir -p /root/subsora
         - cd /root/subsora
         - echo "Updating repository..."
         - if [ -d ".git" ]; then git pull origin main || git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
-        - echo "Pulling new backend image..."
-        - docker pull cicd.zerity.ru:55000/subsora/backend:latest
+        - echo "Pulling new backend image: $BACKEND_IMAGE"
+        - docker pull $BACKEND_IMAGE
         - echo "Exporting environment variables from .env file..."
         - export $(cat .env | grep -v '^#' | xargs)
-        - echo "Deploying stack with exported variables..."
-        - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
+        - echo "Updating Docker Swarm service for $BACKEND_SERVICE..."
+        - docker service update \
+          --force \
+          --image $BACKEND_IMAGE \
+          $BACKEND_SERVICE \
+          --with-registry-auth
         - echo "Waiting for services to update..."
         - sleep 20
         - echo "Checking stack services:"
-        - docker stack services subsora
+        - docker stack services $STACK_NAME
         - echo "Checking service tasks:"
-        - docker service ps subsora_backend --no-trunc
+        - docker service ps $BACKEND_SERVICE --no-trunc
         - echo "Waiting a bit more for backend to be ready..."
         - sleep 10
         - echo "Testing backend health (may take time for rolling update):"
@@ -85,9 +90,7 @@ steps:
       - until docker info; do sleep 1; done
       - cd frontend
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      - docker build -t cicd.zerity.ru:55000/subsora/frontend:${DRONE_COMMIT_SHA} .
-      - docker tag cicd.zerity.ru:55000/subsora/frontend:${DRONE_COMMIT_SHA} cicd.zerity.ru:55000/subsora/frontend:latest
-      - docker push cicd.zerity.ru:55000/subsora/frontend:${DRONE_COMMIT_SHA}
+      - docker build -t cicd.zerity.ru:55000/subsora/frontend:latest .
       - docker push cicd.zerity.ru:55000/subsora/frontend:latest
 
   - name: deploy
