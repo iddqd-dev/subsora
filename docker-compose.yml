@@ -105,20 +105,20 @@ services:
 #    networks:
 #      - subsora_network
 #
-#  nginx-proxy:
-#    image: nginx:1.25-alpine
-#    ports:
-#      - "8080:80"  # Изменил на 8080, чтобы избежать конфликта с основным nginx
-#    volumes:
-#      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
-#    deploy:
-#      restart_policy:
-#        condition: any
-#    depends_on:
-#      - frontend
-#      - backend
-#    networks:
-#      - subsora_network
+  nginx-proxy:
+    image: nginx:1.25-alpine
+    ports:
+      - "8081:80"  # Изменил на 8080, чтобы избежать конфликта с основным nginx
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    deploy:
+      restart_policy:
+        condition: any
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - subsora_network
 
 volumes:
   postgres_data:
