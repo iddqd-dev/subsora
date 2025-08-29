@@ -20,10 +20,11 @@ services:
         constraints:
           - node.role == manager  # Или убери если у тебя один нод
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d subsora"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      #test: ["CMD-SHELL", "pg_isready -U postgres -d subsora"]
+      #interval: 10s
+      #timeout: 5s
+      #retries: 5
+      disable: true
     networks:
       - subsora_network
 
