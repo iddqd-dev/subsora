@@ -2,11 +2,12 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15  # Попробуйте без alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: subsora
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
     deploy:
       restart_policy:
         condition: any
@@ -20,6 +21,15 @@ services:
         mode: ingress
     networks:
       - subsora_network
+    command: |
+      bash -c '
+        echo "=== Starting PostgreSQL Debug ===" >&2
+        echo "POSTGRES_USER: $$POSTGRES_USER" >&2
+        echo "POSTGRES_PASSWORD: $$POSTGRES_PASSWORD" >&2  
+        echo "POSTGRES_DB: $$POSTGRES_DB" >&2
+        echo "===================================" >&2
+        exec docker-entrypoint.sh postgres
+  
 
   backend:
     image: cicd.zerity.ru:55000/subsora/backend:latest
