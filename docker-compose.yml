@@ -17,7 +17,7 @@ services:
       - target: 5432
         published: 5433
         protocol: tcp
-        mode: host  # Ключевое отличие!
+        mode: ingress
     deploy:
       restart_policy:
         condition: any
@@ -38,7 +38,7 @@ services:
       - target: 8000
         published: 8000
         protocol: tcp
-        mode: host
+        mode: ingress
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -97,8 +97,14 @@ services:
   frontend:
     image: cicd.zerity.ru:55000/subsora/frontend:latest
     ports:
-      - "8880:80"
-      - "8443:443"
+      - target: 80
+        published: 8080
+        protocol: tcp
+        mode: ingress
+      - target: 443
+        published: 8443
+        protocol: tcp
+        mode: ingress
     deploy:
       restart_policy:
         condition: any
@@ -108,7 +114,7 @@ services:
   nginx-proxy:
     image: nginx:1.25-alpine
     ports:
-      - "8081:80"  # Изменил на 8080, чтобы избежать конфликта с основным nginx
+      -
     volumes:
       - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
     deploy:
