@@ -37,6 +37,7 @@ steps:
         - if [ -d ".git" ]; then git pull origin main || git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - echo "Deleting old stack..."
         - docker stack rm subsora
+        - sleep 10
         - echo "Pulling new backend image..."
         - docker pull cicd.zerity.ru:55000/subsora/backend:latest
         - echo "Exporting environment variables from .env file..."

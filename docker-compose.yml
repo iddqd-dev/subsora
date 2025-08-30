@@ -122,6 +122,7 @@ services:
 
 volumes:
   postgres_data:
+    external: true
 
 networks:
   subsora_network:
