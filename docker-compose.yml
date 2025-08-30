@@ -114,7 +114,10 @@ services:
   nginx-proxy:
     image: nginx:1.25-alpine
     ports:
-      -
+      - target: 80
+        published: 8081
+        protocol: tcp
+        mode: ingress
     volumes:
       - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
     deploy:
