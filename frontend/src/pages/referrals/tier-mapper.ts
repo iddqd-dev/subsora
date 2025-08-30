@@ -5,16 +5,15 @@ import {
     WorkspacePremium as PremiumIcon,
   } from '@mui/icons-material';
   import type { ElementType } from 'react';
-  import type { Palette } from '@mui/material';
   import type { ReferralTierAPI } from '../../hooks/useReferralTiers';
   
   // Расширенный тип, который используется в компонентах
   export interface DiscountLevel {
-    referrals: number;
-    discount: number;
-    title: string;
-    Icon: ElementType;
-    color: keyof Omit<Palette, 'modes' | 'common' | 'grey' | 'text' | 'divider' | 'action' | 'background'> | 'grey';
+   referrals: number;
+   discount: number;
+   title: string;
+   Icon: ElementType;
+   color: 'primary' | 'secondary' | 'warning' | 'grey';
   }
   
   // Карта для хранения визуальных атрибутов. Ключ - количество рефералов.

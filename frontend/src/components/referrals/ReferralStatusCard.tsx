@@ -46,7 +46,31 @@ import {
             </Typography>
           </Box>
         </Box>
-  
+                <Divider sx={{ my: 3 }} />
+        <Box sx={{
+            display: 'flex',
+            justifyContent: { xs: 'space-between', sm: 'space-around' }, // Адаптивность
+            textAlign: 'center',
+            gap: 2
+        }}>
+            <Box>
+                <Typography variant="body2" color="text.secondary">
+                    Экономия в месяц
+                </Typography>
+                <Typography variant="h5" fontWeight={600} color="success.main">
+                    ${savings.monthly.toFixed(2)}
+                </Typography>
+            </Box>
+            <Box>
+                <Typography variant="body2" color="text.secondary">
+                    Экономия в год
+                </Typography>
+                <Typography variant="h5" fontWeight={600} color="success.main">
+                    ${savings.yearly.toFixed(2)}
+                </Typography>
+            </Box>
+        </Box>
+
 
         
         {/* Вставляем разделитель для визуальной иерархии */}

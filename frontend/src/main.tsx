@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider.tsx';
 import { useAuth } from './hooks/useAuth.ts'; // Добавляем импорт хука
+import type { ReactNode } from 'react';
 
 // Импорты для темы
 import { ThemeProvider } from '@mui/material/styles';
@@ -23,7 +24,7 @@ const SettingsPage = () => <h1>Настройки</h1>;
 const ProfilePage = () => <h1>Профиль</h1>;
 
 // ИСПРАВЛЕННЫЙ ProtectedRoute - теперь использует useAuth вместо localStorage
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useAuth();
   
   console.log('🛡️ ProtectedRoute check:', { user: !!user, loading });
@@ -53,7 +54,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 };
 
 // Компонент для публичных роутов (опционально)
-const PublicRoute = ({ children }: { children: JSX.Element }) => {
+const PublicRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useAuth();
   
   console.log('🌐 PublicRoute check:', { user: !!user, loading });
