@@ -15,7 +15,7 @@ services:
       - subsora_network
     ports:
       - target: 5432
-        published: 5433
+        published: 45432
         protocol: tcp
         mode: host
     deploy:
@@ -36,7 +36,7 @@ services:
     image: cicd.zerity.ru:55000/subsora/backend:latest
     ports:
       - target: 8000
-        published: 8000
+        published: 48000
         protocol: tcp
         mode: host
     environment:
@@ -98,11 +98,11 @@ services:
     image: cicd.zerity.ru:55000/subsora/frontend:latest
     ports:
       - target: 80
-        published: 8080
+        published: 48080
         protocol: tcp
         mode: host
       - target: 443
-        published: 8443
+        published: 48443
         protocol: tcp
         mode: host
     deploy:
@@ -115,7 +115,7 @@ services:
     image: nginx:1.25-alpine
     ports:
       - target: 80
-        published: 8081
+        published: 48081
         protocol: tcp
         mode: host
     volumes:
