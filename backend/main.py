@@ -34,11 +34,3 @@ app.add_exception_handler(ValueError, validation_exception_handler) # type: igno
 
 app.include_router(api_router)
 
-@app.get("/")
-async def root():
-    return {"message": "Subsora API is running!", "version": "0.1.0"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "service": "subsora-api"}
-

@@ -16,3 +16,12 @@ router.include_router(referrals.router, prefix="/referrals", tags=["v1_referrals
 router.include_router(bot.router, prefix="/bot", tags=["v1_bot_gateway"])
 router.include_router(client_auth.router, prefix="/client-auth", tags=["v1_client_auth"])
 router.include_router(misc.router, prefix="/misc", tags=["v1_misc"])
+
+
+@router.get("/")
+async def root():
+    return {"message": "Subsora API is running!", "version": "0.1.0"}
+
+@router.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "subsora-api"}
