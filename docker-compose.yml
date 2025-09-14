@@ -42,6 +42,7 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=5432
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-[]}
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/subsora
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-dummy_token}
       - TELEGRAM_BOT_SECRET=${TELEGRAM_BOT_SECRET:-dummy_secret}
