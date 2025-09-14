@@ -43,7 +43,7 @@ const NoSubscriptionCard: React.FC<Props> = ({ plans }) => {
               У вас нет активной подписки
             </Typography>
           </Box>
-          <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+          <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } , color: 'warning.contrastText' }}>
             Выберите тарифный план, чтобы начать пользоваться всеми возможностями сервиса.
           </Typography>
         </CardContent>

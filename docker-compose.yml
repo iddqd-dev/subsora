@@ -43,6 +43,7 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/subsora
+      - BACKEND_CORS_ORIGINS=[http://localhost:3000,http://localhost:8000,http://localhost:5173]
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-dummy_token}
       - TELEGRAM_BOT_SECRET=${TELEGRAM_BOT_SECRET:-dummy_secret}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecret}
