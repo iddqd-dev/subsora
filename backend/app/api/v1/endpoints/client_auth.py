@@ -7,6 +7,7 @@ from backend.app.db.session import get_async_session
 from backend.app.core.jwt_ import create_tokens, decode_token
 from backend.app.schemas.token import Token
 from backend.app.schemas.telegram import TelegramLoginData  # Создадим эту схему
+from backend.app.schemas.user import UserCreateFromTelegram
 from backend.app.services.telegram_validator import validate_telegram_hash  # Создадим этот сервис
 from backend.app.core.config import settings
 
@@ -26,7 +27,11 @@ async def login_via_telegram(
     db_user = await crud.user.get_by_telegram_id(db, telegram_id=tg_data.id)
     if not db_user:
         full_name = f"{tg_data.first_name} {tg_data.last_name or ''}".strip()
-        db_user = await crud.user.create_from_telegram(db, telegram_id=tg_data.id, full_name=full_name)
+        user_create_data = UserCreateFromTelegram(
+            telegram_id=tg_data.id,
+            full_name=full_name
+        )
+        db_user = await crud.user.create_from_telegram(db, obj_in=user_create_data)
 
     tokens = create_tokens(subject=db_user.id)
     return {"token_type": "bearer", **tokens}
