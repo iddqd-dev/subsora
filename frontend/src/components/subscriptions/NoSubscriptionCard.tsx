@@ -1,17 +1,53 @@
-import React from 'react';
-import { Card, CardContent, Typography, Button, Box } from '@mui/material';
+import React, { useState } from 'react';
+import { Card, CardContent, Typography, Button, Box, TextField, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
+import apiClient from '../../api/axios';
 import type { Plan } from '../../types/plan';
+import type { Transaction } from '../../types/transaction';
 
 interface Props {
   plans: Plan[];
 }
 
 const NoSubscriptionCard: React.FC<Props> = ({ plans }) => {
-  const handleSelectPlan = (planId: number) => {
-    // Здесь будет логика покупки подписки
-    console.log(`Выбран план с ID: ${planId}`);
+  const [isLoading, setIsLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [pendingModalOpen, setPendingModalOpen] = useState(false);
+  const [pendingTransaction, setPendingTransaction] = useState<Transaction | null>(null);
+
+  const handleSelectPlan = async (planId: number) => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    try {
+      // Prepare request body
+      const requestBody = { plan_id: planId, coupon_code: couponCode.trim() || undefined };
+
+      // Step 1: Initiate purchase
+      const purchaseResponse = await apiClient.post('subscriptions/purchase', requestBody);
+      const transaction = purchaseResponse.data;
+      console.log('Purchase initiated:', transaction);
+
+      // Step 2: Mock confirm payment (for testing)
+      const confirmResponse = await apiClient.post(`transactions/${transaction.id}/confirm_payment_mock`);
+      console.log('Purchase confirmed:', confirmResponse.data);
+
+      // Show pending modal
+      setPendingTransaction(transaction);
+      setPendingModalOpen(true);
+    } catch (error) {
+      console.error('Error initiating purchase:', error);
+      alert('Ошибка при инициации покупки. Попробуйте позже.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClosePendingModal = () => {
+    setPendingModalOpen(false);
+    setPendingTransaction(null);
+    window.location.reload();
   };
 
   return (
@@ -38,16 +74,36 @@ const NoSubscriptionCard: React.FC<Props> = ({ plans }) => {
             </Box>
             <Typography variant="h5" component="div" sx={{ 
               fontWeight: 600,
-              fontSize: { xs: '1.125rem', md: '1.5rem' }
+              fontSize: { xs: '1.125rem', md: '1.5rem' },
+              color: 'warning.main'
             }}>
               У вас нет активной подписки
             </Typography>
           </Box>
-          <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } , color: 'warning.contrastText' }}>
+          <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } , color: 'text.primary' }}>
             Выберите тарифный план, чтобы начать пользоваться всеми возможностями сервиса.
           </Typography>
         </CardContent>
       </Card>
+
+      {/* Поле для кода купона */}
+      <Box sx={{ mb: { xs: 2, md: 3 } }}>
+        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+          Есть промокод? Введите его для скидки:
+        </Typography>
+        <TextField
+          fullWidth
+          placeholder="Введите код купона"
+          value={couponCode}
+          onChange={(e) => setCouponCode(e.target.value)}
+          variant="outlined"
+          size="small"
+          sx={{
+            '& .MuiOutlinedInput-root': { borderRadius: 1 },
+            maxWidth: { xs: '100%', md: 300 }
+          }}
+        />
+      </Box>
 
       {/* Заголовок тарифов */}
       <Typography variant="h5" gutterBottom sx={{ 
@@ -117,6 +173,7 @@ const NoSubscriptionCard: React.FC<Props> = ({ plans }) => {
                 variant="contained" 
                 fullWidth
                 onClick={() => handleSelectPlan(plan.id)}
+                disabled={isLoading}
                 sx={{ 
                   borderRadius: 1,
                   textTransform: 'none',
@@ -125,12 +182,31 @@ const NoSubscriptionCard: React.FC<Props> = ({ plans }) => {
                   fontSize: { xs: '0.875rem', md: '1rem' }
                 }}
               >
-                Выбрать план
+                {isLoading ? 'Обработка...' : 'Выбрать план'}
               </Button>
             </CardContent>
           </Card>
         ))}
       </Box>
+
+      {/* Модал для pending-транзакции */}
+      <Dialog open={pendingModalOpen} onClose={handleClosePendingModal} maxWidth="sm" fullWidth>
+        <DialogTitle>Транзакция создана</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Ваша транзакция #{pendingTransaction?.id} на сумму ${pendingTransaction?.amount.toFixed(2)} {pendingTransaction?.currency} инициирована.
+            <br />
+            <strong>Инструкции по оплате:</strong> Для тестирования оплатите вручную (например, через банковский перевод). После подтверждения статус обновится автоматически.
+            <br />
+            ID плана: {pendingTransaction?.plan_id}. Статус: {pendingTransaction?.status}.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePendingModal} color="primary">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

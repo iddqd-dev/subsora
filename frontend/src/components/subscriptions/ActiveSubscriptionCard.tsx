@@ -1,7 +1,8 @@
 import React from 'react';
-import { Card, CardContent, Typography, Button, Box, Select, MenuItem, FormControl, InputLabel, LinearProgress} from '@mui/material';
+import { Card, CardContent, Typography, Button, Box, Select, MenuItem, FormControl, InputLabel, LinearProgress } from '@mui/material';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import { QRCodeSVG } from 'qrcode.react';
 import type { Subscription } from '../../types/subscription';
 import type { Plan } from '../../types/plan';
 
@@ -166,6 +167,28 @@ const ActiveSubscriptionCard: React.FC<Props> = ({ subscription, plans }) => {
             Отменить подписку
           </Button>
         </Box>
+
+        {/* VPN Subscription Link */}
+        {subscription.user.subscription_url && (
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1  }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500, textAlign: 'center' }}>
+              QR-код для VPN-подписки:
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <QRCodeSVG value={subscription.user.subscription_url} size={128} />
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => navigator.clipboard.writeText(subscription.user.subscription_url || '')}
+              sx={{ minWidth: 'auto', mx: 'auto', }}
+            >
+              Копировать ссылку
+            </Button>
+            </Box>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );
