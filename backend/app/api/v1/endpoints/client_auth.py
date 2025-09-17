@@ -25,7 +25,8 @@ async def login_via_telegram(
 
     db_user = await crud.user.get_by_telegram_id(db, telegram_id=tg_data.id)
     if not db_user:
-        db_user = await crud.user.create_from_telegram(db, obj_in=tg_data)
+        full_name = f"{tg_data.first_name} {tg_data.last_name or ''}".strip()
+        db_user = await crud.user.create_from_telegram(db, telegram_id=tg_data.id, full_name=full_name)
 
     tokens = create_tokens(subject=db_user.id)
     return {"token_type": "bearer", **tokens}
