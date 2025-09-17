@@ -43,6 +43,7 @@ steps:
         - echo "Exporting environment variables from .env file..."
         - export $(cat .env | grep -v '^#' | xargs)
         - echo "Deploying stack with exported variables..."
+        - docker network create -d overlay --attachable subsora_network
         - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
         - echo "Waiting for services to update..."
         - sleep 20
