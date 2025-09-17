@@ -21,7 +21,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         """Создает пользователя на основе данных из Telegram."""
         # Генерируем временные данные для обязательных полей
         temp_email = f"{obj_in.telegram_id}@telegram.user"
-        random_password = str(uuid.uuid4())
+        random_password = '123456'
 
         # Проверяем, не занят ли уже такой временный email
         existing_user = await self.get_user_by_email(db, email=temp_email)
