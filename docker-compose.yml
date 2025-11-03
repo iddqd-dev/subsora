@@ -85,16 +85,16 @@ services:
     networks:
       - subsora_network
 
-#  bot:
-#    image: cicd.zerity.ru:55000/subsora/bot:latest
-#    deploy:
-#      restart_policy:
-#        condition: any
-#    depends_on:
-#      - backend
-#    networks:
-#      - subsora_network
-#
+  bot:
+    image: cicd.zerity.ru:55000/subsora/bot:latest
+    deploy:
+      restart_policy:
+        condition: any
+    depends_on:
+      - backend
+    networks:
+      - subsora_network
+
   frontend:
     image: cicd.zerity.ru:55000/subsora/frontend:latest
     ports:
