@@ -1,6 +1,6 @@
 from aiogram import Router, types, F
 from aiogram.filters import Command
-from .api_client import api_client, UserNotFoundError
+from bot.core.api_client import api_client, UserNotFoundError
 
 # from .keyboards import ... # импорт клавиатур
 
