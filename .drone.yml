@@ -215,23 +215,34 @@ steps:
         from_secret: ssh_key
       script:
         - echo "🔄 Full redeployment triggered..."
+        - mkdir -p /root/subsora
         - cd /root/subsora
-        - git pull origin main || git pull origin master
+        - echo "Updating repository..."
+        - if [ -d ".git" ]; then git pull origin master || git pull origin main; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - echo "Pulling all images..."
-        - docker pull cicd.zerity.ru:55000/subsora/backend:latest
-        - docker pull cicd.zerity.ru:55000/subsora/frontend:latest
-        - docker pull cicd.zerity.ru:55000/subsora/bot:latest
-        - echo "Removing old stack..."
-        - docker stack rm subsora
-        - sleep 10
-        - echo "Exporting variables..."
+        - docker pull cicd.zerity.ru:55000/subsora/backend:latest || echo "Backend image not found, skipping"
+        - docker pull cicd.zerity.ru:55000/subsora/frontend:latest || echo "Frontend image not found, skipping"
+        - docker pull cicd.zerity.ru:55000/subsora/bot:latest || echo "Bot image not found, skipping"
+        - echo "Removing old stack completely..."
+        - docker stack rm subsora || echo "Stack not found"
+        - echo "Waiting for cleanup..."
+        - sleep 15
+        - echo "Cleaning up orphaned networks..."
+        - docker network rm subsora_subsora_network 2>/dev/null || true
+        - docker network prune -f
+        - echo "Creating base network..."
+        - docker network create -d overlay --attachable subsora_network 2>/dev/null || echo "Network already exists"
+        - echo "Exporting variables from .env..."
         - export $(cat .env | grep -v '^#' | xargs)
         - echo "Deploying full stack..."
-        - docker network create -d overlay --attachable subsora_network || true
         - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
+        - echo "Waiting for services to start..."
         - sleep 20
-        - echo "Full stack redeployed!"
+        - echo "✅ Full stack redeployed!"
         - docker stack services subsora
+        - echo ""
+        - echo "Service status:"
+        - docker service ls --filter "label=com.docker.stack.namespace=subsora"
 
 trigger:
   branch:
@@ -245,4 +256,3 @@ when:
     includes:
       - docker-compose.yml
       - .drone.yml
-      - .env.example
