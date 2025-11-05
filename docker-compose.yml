@@ -87,8 +87,10 @@ services:
 
   bot:
     image: cicd.zerity.ru:55000/subsora/bot:latest
-    volumes:
-      - /root/subsora/bot/.env:/app/.env:ro
+    configs:
+      - source: bot_env_config
+        target: /app/.env
+        mode: 0444
     deploy:
       restart_policy:
         condition: any
@@ -139,3 +141,6 @@ volumes:
 networks:
   subsora_network:
     external: true
+configs:
+  bot_env_config:
+    file: /root/subsora/bot/.env
