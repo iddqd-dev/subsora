@@ -138,9 +138,11 @@ volumes:
   postgres_data:
     external: true
 
-networks:
-  subsora_network:
-    external: true
 configs:
   bot_env_config:
     file: /root/subsora/bot/.env
+
+networks:
+  subsora_network:
+    driver: overlay
+    attachable: true
