@@ -4,16 +4,14 @@ type: docker
 name: subsora-backend
 
 steps:
-  # Этот шаг проверяет, были ли изменения в папке backend.
-  # Если нет, выполнение конвейера прекращается с кодом 78 (пропустить).
+  # Этот шаг проверяет, были ли изменения в папке backend в рамках текущего push.
   - name: check-changes
     image: alpine/git
     commands:
       - echo "Checking for changes in 'backend/' directory..."
-      - git fetch origin main
-      # Сравниваем текущий коммит с предыдущим в ветке
+      # Сравниваем коммиты до и после push'а. Это работает для любой ветки.
       - |
-        if git diff --name-only origin/main HEAD | grep -q "backend/"; then
+        if git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "backend/"; then
           echo "Changes detected in 'backend/'. Continuing pipeline."
         else
           echo "No changes in 'backend/'. Skipping pipeline."
@@ -52,7 +50,7 @@ steps:
         - echo "Deploying backend..."
         - mkdir -p /root/subsora
         - cd /root/subsora
-        - if [ -d ".git" ]; then git pull origin main; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - docker pull cicd.zerity.ru:55000/subsora/backend:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
         - echo "Backend deployed!"
@@ -78,9 +76,8 @@ steps:
     image: alpine/git
     commands:
       - echo "Checking for changes in 'frontend/' directory..."
-      - git fetch origin main
       - |
-        if git diff --name-only origin/main HEAD | grep -q "frontend/"; then
+        if git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "frontend/"; then
           echo "Changes detected in 'frontend/'. Continuing pipeline."
         else
           echo "No changes in 'frontend/'. Skipping pipeline."
@@ -88,6 +85,7 @@ steps:
         fi
 
   - name: docker-build-push
+    # ... (остальные шаги без изменений)
     image: docker:dind
     privileged: true
     environment:
@@ -119,7 +117,7 @@ steps:
         - echo "Deploying frontend..."
         - mkdir -p /root/subsora
         - cd /root/subsora
-        - if [ -d ".git" ]; then git pull origin main; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - docker pull cicd.zerity.ru:55000/subsora/frontend:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:latest subsora_frontend
         - echo "Frontend deployed!"
@@ -145,9 +143,8 @@ steps:
     image: alpine/git
     commands:
       - echo "Checking for changes in 'bot/' directory..."
-      - git fetch origin main
       - |
-        if git diff --name-only origin/main HEAD | grep -q "bot/"; then
+        if git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "bot/"; then
           echo "Changes detected in 'bot/'. Continuing pipeline."
         else
           echo "No changes in 'bot/'. Skipping pipeline."
@@ -155,6 +152,7 @@ steps:
         fi
 
   - name: docker-build-push
+    # ... (остальные шаги без изменений)
     image: docker:dind
     privileged: true
     environment:
@@ -186,7 +184,7 @@ steps:
         - echo "Deploying bot..."
         - mkdir -p /root/subsora
         - cd /root/subsora
-        - if [ -d ".git" ]; then git pull origin main; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - docker pull cicd.zerity.ru:55000/subsora/bot:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:latest subsora_bot
         - echo "Bot deployed!"
@@ -212,17 +210,16 @@ steps:
     image: alpine/git
     commands:
       - echo "Checking for changes in 'docker-compose.yml' or '.drone.yml'..."
-      - git fetch origin main
-      # Ищем изменения в любом из двух файлов
       - |
-        if git diff --name-only origin/main HEAD | grep -qE "(docker-compose.yml|.drone.yml)"; then
+        if git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -qE "(docker-compose.yml|.drone.yml)"; then
           echo "Infrastructure changes detected. Continuing full redeploy."
         else
           echo "No infrastructure changes. Skipping pipeline."
           exit 78
         fi
-        
+
   - name: full-redeploy
+    # ... (остальные шаги без изменений)
     image: appleboy/drone-ssh
     settings:
       host:
@@ -235,9 +232,8 @@ steps:
         - echo "🔄 Full redeployment triggered..."
         - mkdir -p /root/subsora
         - cd /root/subsora
-        - if [ -d ".git" ]; then git pull origin main; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - export $(cat .env | grep -v '^#' | xargs)
-        # Удаляем и заново разворачиваем весь стек
         - docker stack rm subsora || echo "Stack not found, proceeding."
         - echo "Waiting for stack to be removed..."
         - sleep 15
