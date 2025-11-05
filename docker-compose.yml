@@ -87,6 +87,8 @@ services:
 
   bot:
     image: cicd.zerity.ru:55000/subsora/bot:latest
+    volumes:
+      - /root/subsora/bot/.env:/app/.env:ro
     deploy:
       restart_policy:
         condition: any
