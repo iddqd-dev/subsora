@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import select
 
@@ -14,6 +15,10 @@ from backend.app.services.vpn_manager import VpnManager # Наш VPN-менед�
 # from backend.app.schemas.bot import BotUserProfileResponse
 
 router = APIRouter()
+
+class BotPurchaseRequest(BaseModel):
+    telegram_id: int
+    plan_id: int
 
 # --- Зависимость для проверки секретного токена ---
 async def verify_bot_token(x_bot_token: str = Header(..., description="Секретный токен для аутентификации бота")):
@@ -140,3 +145,26 @@ async def register_user_and_grant_trial(
         "user_id": new_user.id,
         "subscription": final_subscription
     }
+
+
+@router.post("/grant-subscription", dependencies=[Depends(verify_bot_token)])
+async def grant_subscription_via_bot(
+        data: BotPurchaseRequest,
+        db: AsyncSession = Depends(get_async_session)
+):
+    """Выдать подписку пользователю (например, после оплаты вручную или через бота)"""
+    user = await crud.user.get_by_telegram_id(db, telegram_id=data.telegram_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    plan = await crud.plan.get(db, _id=data.plan_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    # Создаем транзакцию и сразу подтверждаем
+    req = SubscriptionCreateRequest(plan_id=plan.id)
+    # prepare_purchase вернет ошибку, если уже есть активная подписка - это ок
+    transaction = await prepare_purchase(user=user, request=req, db=db)
+    sub = await confirm_purchase(transaction_id=transaction.id, db=db)
+
+    return {"status": "success", "subscription_id": sub.id}

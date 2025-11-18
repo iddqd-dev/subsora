@@ -26,6 +26,12 @@ def get_main_menu() -> InlineKeyboardMarkup:
             callback_data=CallbackData.SUPPORT
         )
     )
+    builder.row(
+        InlineKeyboardButton(
+            text=ButtonText.REFERRALS,
+            callback_data=CallbackData.REFERRALS
+        )
+    )
     return builder.as_markup()
 
 
@@ -99,4 +105,16 @@ def get_back_button(callback_data: str = CallbackData.BACK_TO_MENU) -> InlineKey
             callback_data=callback_data
         )
     )
+    return builder.as_markup()
+
+def get_instruction_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="🍏 iOS (V2Box)", url="https://apps.apple.com/us/app/v2box-v2ray-client/id6446814690"),
+        InlineKeyboardButton(text="🤖 Android (v2rayNG)", url="https://play.google.com/store/apps/details?id=com.v2ray.ang")
+    )
+    builder.row(
+        InlineKeyboardButton(text="💻 Windows (Hiddify)", url="https://github.com/hiddify/hiddify-next/releases")
+    )
+    builder.row(InlineKeyboardButton(text="🗑 Скрыть", callback_data="delete_msg"))
     return builder.as_markup()

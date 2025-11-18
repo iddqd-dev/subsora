@@ -61,21 +61,46 @@ async def process_plan_purchase(callback: CallbackQuery):
     """
     Обрабатывает выбор тарифа для покупки.
 
-    TODO: Интеграция с платёжной системой
     """
-    plan_id = callback.data.split("_")[-1]
+    plan_id = int(callback.data.split("_")[-1])
 
-    # Временная заглушка
-    await callback.answer(
-        "💳 Оплата временно недоступна. Функция в разработке.",
-        show_alert=True
+    # 1. Спрашиваем метод оплаты
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="💳 Банковская карта (РФ)", callback_data=f"pay_mock_{plan_id}"))
+    builder.row(InlineKeyboardButton(text="💎 Crypto (USDT)", callback_data=f"pay_mock_{plan_id}"))
+    builder.row(get_back_button(CallbackData.PLANS).inline_keyboard[0][0])
+
+    await callback.message.edit_text(
+        "Выберите способ оплаты:",
+        reply_markup=builder.as_markup()
     )
+    await callback.answer()
 
-    logger.info(f"User {callback.from_user.id} attempted to buy plan {plan_id}")
 
-    # TODO: Здесь будет логика:
-    # 1. Создание счёта на оплату
-    # 2. Генерация ссылки на оплату (ЮKassa, Stripe и т.д.)
-    # 3. Перевод пользователя в состояние ожидания оплаты
-    # 4. Webhook от платёжной системы о статусе оплаты
-    # 5. Активация подписки после успешной оплаты
+@router.callback_query(F.data.startswith("pay_mock_"))
+async def mock_payment_process(callback: CallbackQuery):
+    """Симуляция процесса оплаты"""
+    plan_id = int(callback.data.split("_")[-1])
+
+    await callback.message.edit_text("⏳ Формирование счета...")
+
+    # В реальном проекте здесь мы создаем ссылку на оплату (ЮKassa/Stripe)
+    # И даем кнопку "Оплатить".
+
+    # Т.к. у нас нет реальной платежки, делаем "Магию":
+    # Мы используем логику триала, но подставляем нужный plan_id.
+    # НО! Твой эндпоинт /register-trial жестко ищет тариф с именем 'пробный'.
+
+    # ВАРИАНТ БЕЗ ИЗМЕНЕНИЯ БЭКЕНДА:
+    # Просто пишем пользователю обратиться к администратору для покупки.
+
+    await callback.message.edit_text(
+        """💳 *Тестовый режим оплаты*
+
+В данный момент автоматическая оплата находится в разработке.
+Для покупки подписки напишите администратору: @admin_username
+Укажите ваш ID: `{}`
+""".format(callback.from_user.id),
+        reply_markup=get_back_button()
+    )
+    await callback.answer()

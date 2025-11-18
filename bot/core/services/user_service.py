@@ -4,6 +4,7 @@ from typing import Dict, Any
 
 from ..api_client import SubsoraApiClient, UserNotFoundError
 from ..texts import BotTexts
+from ..utils import bytes_to_human
 
 logger = logging.getLogger(__name__)
 
@@ -108,3 +109,64 @@ class UserService:
         end_date = subscription.get('end_date', 'N/A')
 
         return BotTexts.TRIAL_SUCCESS.format(end_date=end_date)
+
+    def format_profile_text(self, profile_data: Dict[str, Any]) -> str:
+        user = profile_data.get('user', {})
+        subscription = profile_data.get('active_subscription')
+        stats = profile_data.get('vpn_stats')  # Получаем статистику из Marzban
+
+        lines = [BotTexts.PROFILE_HEADER]
+
+        # --- Блок Пользователь ---
+        full_name = user.get('full_name', 'Пользователь')
+        lines.append(BotTexts.PROFILE_NAME.format(full_name=full_name))
+        lines.append(f"🆔 ID: `{user.get('telegram_id')}`")
+
+        # --- Блок Подписка ---
+        if subscription:
+            lines.append(BotTexts.ACTIVE_SUBSCRIPTION)
+            plan = subscription.get('plan', {})
+
+            lines.append(f"🏷️ Тариф: *{plan.get('name')}*")
+
+            # Красивая дата
+            end_date = subscription.get('end_date', '').split('T')[0]
+            lines.append(f"🗓️ Истекает: `{end_date}`")
+
+            # --- Блок Статистика (Если есть подписка) ---
+            if stats:
+                lines.append("\n📊 *Статистика трафика:*")
+                used = bytes_to_human(stats.get('used_traffic', 0))
+                limit = stats.get('data_limit', 0)
+
+                if limit > 0:
+                    limit_str = bytes_to_human(limit)
+                    lines.append(f"🔄 Использовано: {used} / {limit_str}")
+                else:
+                    lines.append(f"🔄 Использовано: {used} (Безлимит)")
+
+                status_emoji = "🟢" if stats.get('status') == 'active' else "🔴"
+                lines.append(f"Статус VPN: {status_emoji} {stats.get('status')}")
+
+        else:
+            lines.append(BotTexts.NO_SUBSCRIPTION)
+            lines.append("\n💡 _Оформите подписку, чтобы пользоваться быстрым интернетом._")
+
+        return "\n".join(lines)
+
+    async def create_transaction(self, telegram_id: int, plan_id: int) -> Dict[str, Any]:
+        """Создает транзакцию на покупку."""
+        # Сначала нужно найти user_id по telegram_id (или бэкенд должен уметь искать по tg_id)
+        # Для простоты предположим, что мы передаем user_id, полученный из профиля,
+        # ЛИБО добавим эндпоинт в бэкенд для создания транзакции по TG ID.
+        # В текущем коде бэкенда endpoints/subscriptions.py/purchase требует Auth Token пользователя.
+        # Это сложнее для бота.
+
+        # ПРОСТОЕ РЕШЕНИЕ:
+        # Бот делает запрос от имени админа (с X-Bot-Token),
+        # но нам нужен эндпоинт в бэкенде специально для бота: /bot/purchase
+
+        # Если такого нет, давай сымитируем "Триальную" логику для любого плана
+        # или добавим метод в класс ApiClient для вызова существующего /register-trial
+        # но для покупки.
+        pass

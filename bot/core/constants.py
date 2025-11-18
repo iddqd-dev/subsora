@@ -20,6 +20,8 @@ class CallbackData:
     BACK_TO_MENU = "back_to_menu"
     BACK_TO_PROFILE = "back_to_profile"
 
+    # Реферальная система
+    REFERRALS = "referrals"
 
 class ButtonText:
     """Тексты кнопок."""
@@ -30,3 +32,4 @@ class ButtonText:
     GET_TRIAL = "🎁 Получить триал"
     BACK = "🔙 Назад"
     BACK_TO_MENU = "🏠 Главное меню"
+    REFERRALS = "👥 Рефералы"

@@ -8,6 +8,7 @@ from ..services.user_service import UserService
 from ..constants import CallbackData
 from ..texts import BotTexts
 from ..keyboards.inline import get_profile_menu, get_trial_menu
+from ..keyboards.inline import get_instruction_keyboard
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -64,10 +65,13 @@ async def show_subscription_url(callback: CallbackQuery):
         text = user_service.format_subscription_url(profile_data)
 
         # Отправляем новым сообщением (чтобы пользователь мог легко скопировать)
-        await callback.message.answer(text)
+        await callback.message.answer(
+            text,
+            reply_markup=get_instruction_keyboard(),  # Кнопки скачивания приложений
+            disable_web_page_preview=True
+        )
 
-        # Уведомляем что ссылка отправлена
-        await callback.answer("✅ Ссылка отправлена!", show_alert=False)
+        await callback.answer()
 
     except UserNotFoundError:
         await callback.answer("❌ Профиль не найден", show_alert=True)
