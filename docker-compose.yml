@@ -70,6 +70,7 @@ services:
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
       - REDIS_URL=${REDIS_URL:-}
     deploy:
+      endpoint_mode: dnsrr
       restart_policy:
         condition: any
         delay: 5s
