@@ -53,7 +53,7 @@ services:
         parallelism: 1
         delay: 10s
         failure_action: rollback
-        order: start-first
+        order: stop-first
     depends_on:
       - db
     command: ["sh", "-c", "echo 'Waiting for database...' && until nc -z db 5432; do echo 'Database not ready, waiting...'; sleep 2; done && echo 'Database is ready!' && alembic -c /app/backend/alembic.ini upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
