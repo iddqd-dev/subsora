@@ -43,36 +43,6 @@ services:
       - source: backend_env_config
         target: /app/.env
         mode: 0444
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-[]}
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/subsora
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-dummy_token}
-      - TELEGRAM_BOT_SECRET=${TELEGRAM_BOT_SECRET:-dummy_secret}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecret}
-      - PROJECT_NAME=Subsora
-      - VERSION=0.1.0
-      - API_V1_STR=/api/v1
-      - JWT_ALGORITHM=HS256
-      - ACCESS_TOKEN_EXPIRE_MINUTES=60
-      - REFRESH_TOKEN_EXPIRE_DAYS=30
-      - ENVIRONMENT=production
-      - DEBUG=false
-      - VPN_PANEL_URL=${VPN_PANEL_URL:-https://domain.com}
-      - VPN_PANEL_PORT=${VPN_PANEL_PORT:-8002}
-      - VPN_PANEL_USER=${VPN_PANEL_USER:-admin}
-      - VPN_PANEL_PASSWORD=${VPN_PANEL_PASSWORD:-password}
-      - VPN_PANEL_SSL=${VPN_PANEL_SSL:-true}
-      - SMTP_TLS=${SMTP_TLS:-true}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - EMAILS_FROM_EMAIL=${EMAILS_FROM_EMAIL:-}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
-      - REDIS_URL=${REDIS_URL:-}
     deploy:
       endpoint_mode: dnsrr
       restart_policy:
