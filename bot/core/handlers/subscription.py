@@ -1,12 +1,14 @@
 """Хендлеры для работы с подписками и тарифами."""
 import logging
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from ..api_client import api_client, SubsoraApiClientError
 from ..constants import CallbackData
 from ..texts import BotTexts
 from ..keyboards.inline import get_plans_menu, get_back_button
+
 
 logger = logging.getLogger(__name__)
 router = Router()
