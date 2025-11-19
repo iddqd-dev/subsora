@@ -168,3 +168,25 @@ async def grant_subscription_via_bot(
     sub = await confirm_purchase(transaction_id=transaction.id, db=db)
 
     return {"status": "success", "subscription_id": sub.id}
+
+
+@router.get(
+    "/plans",
+    dependencies=[Depends(verify_bot_token)]
+)
+async def get_active_plans(
+        db: AsyncSession = Depends(get_async_session)
+):
+    """
+    Возвращает список активных тарифных планов для бота.
+    Сортирует по цене (от дешевых к дорогим).
+    """
+    # Выбираем только активные планы (is_active=True)
+    # Сортируем по цене, чтобы в боте они шли по возрастанию
+    query = select(Plan).where(Plan.is_active == True).order_by(Plan.price)
+
+    result = await db.execute(query)
+    plans = result.scalars().all()
+
+    # Возвращаем список. FastAPI сам сериализует SQLAlchemy модели в JSON
+    return {"plans": plans}
