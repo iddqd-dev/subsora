@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import select
+from sqlalchemy import or_
 
 from backend.app import crud
 from backend.app.db.session import get_async_session
@@ -81,7 +82,6 @@ async def get_user_profile_by_telegram_id(
 
 @router.post(
     "/register-trial",
-    # response_model=... # <- пока оставим без модели ответа для простоты
     dependencies=[Depends(verify_bot_token)]
 )
 async def register_user_and_grant_trial(
@@ -89,60 +89,63 @@ async def register_user_and_grant_trial(
         db: AsyncSession = Depends(get_async_session)
 ):
     """
-    Регистрирует нового пользователя из Telegram и выдает ему триальную подписку.
+    Регистрирует пользователя (если нет) и выдает триал (если не было подписок).
     """
-    # 1. Проверяем, не существует ли уже пользователь
-    existing_user = await crud.user.get_by_telegram_id(db, telegram_id=user_data.telegram_id)
-    if existing_user:
+    # 1. Ищем пользователя или создаем нового
+    user = await crud.user.get_by_telegram_id(db, telegram_id=user_data.telegram_id)
+    if not user:
+        user = await crud.user.create_from_telegram(db, obj_in=user_data)
+
+    # 2. Проверяем, не пользовался ли он уже сервисом (защита от абуза)
+    # Получаем все подписки пользователя (и активные, и архивные)
+    user_subs = await crud.subscription.get_user_subscriptions(db, user_id=user.id)
+    if user_subs:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="User with this Telegram ID already exists."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Trial period already used or user has history."
         )
 
-    # 2. Находим триальный тарифный план в базе
-    plan_result = await db.execute(
-        select(Plan).where(Plan.name.ilike('%пробный%'))
-    )
+    # 3. Ищем подходящий тарифный план
+    # Ищем план с ценой 0 ИЛИ с именем, содержащим "пробный"/"trial"
+    query = select(Plan).where(
+        Plan.is_active == True,
+        or_(
+            Plan.price == 0,
+            Plan.name.ilike('%пробный%'),
+            Plan.name.ilike('%trial%'),
+            Plan.name.ilike('%free%')
+        )
+    ).order_by(Plan.price)  # Берем самый дешевый (бесплатный)
+
+    plan_result = await db.execute(query)
     trial_plan = plan_result.scalars().first()
+
     if not trial_plan:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Trial plan not found in the database."
+            detail="No trial plan configured in database (create a plan with price 0)."
         )
 
-    # 3. Создаем нового пользователя
-    new_user = await crud.user.create_from_telegram(db, obj_in=user_data)
-    if not new_user:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create a new user."
-        )
-
-    # 4. Имитируем процесс покупки для этого пользователя и триального плана
+    # 4. Выдаем подписку
     try:
-        # Шаг 1: Создаем "pending" транзакцию (она будет с нулевой суммой)
-        purchase_request = SubscriptionCreateRequest(plan_id=trial_plan.id)
-        pending_transaction = await prepare_purchase(user=new_user, request=purchase_request, db=db)
+        # Создаем транзакцию
+        req = SubscriptionCreateRequest(plan_id=trial_plan.id)
+        transaction = await prepare_purchase(user=user, request=req, db=db)
 
-        # Шаг 2: Сразу же "подтверждаем" эту транзакцию
-        final_subscription = await confirm_purchase(transaction_id=pending_transaction.id, db=db)
+        # Подтверждаем транзакцию (активация VPN)
+        final_subscription = await confirm_purchase(transaction_id=transaction.id, db=db)
 
     except Exception as e:
-        # Если что-то пошло не так, откатываем создание пользователя, чтобы избежать "мусора"
         await db.rollback()
-        # Можно даже удалить пользователя, если он успел создаться
-        # await db.delete(new_user)
-        # await db.commit()
+        print(f"Error granting trial: {e}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to grant trial subscription: {e}"
+            detail=f"Failed to activate VPN: {e}"
         )
 
-    # 5. Возвращаем успешный результат
-    # Можно вернуть созданную подписку или просто сообщение об успехе
     return {
-        "message": "User successfully registered and trial granted.",
-        "user_id": new_user.id,
+        "message": "Trial granted successfully.",
+        "user_id": user.id,
         "subscription": final_subscription
     }
 

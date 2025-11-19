@@ -88,17 +88,6 @@ class SubsoraApiClient:
     ) -> Dict[str, Any]:
         """
         Регистрирует нового пользователя с триалом.
-
-        Args:
-            telegram_id: Telegram ID
-            full_name: Полное имя пользователя
-            username: Username в Telegram (опционально)
-
-        Returns:
-            Dict с данными регистрации
-
-        Raises:
-            SubsoraApiClientError: При ошибках регистрации
         """
         session = await self._get_session()
         url = f"{self._base_url}/bot/register-trial"
@@ -111,16 +100,15 @@ class SubsoraApiClient:
 
         try:
             async with session.post(url, json=payload, headers=self._headers) as response:
-                if response.status == 409:
-                    raise SubsoraApiClientError("User already exists")
+                # Если вернулся 400, значит пользователь уже использовал триал
+                if response.status == 400:
+                    raise SubsoraApiClientError("ALREADY_USED")
 
                 response.raise_for_status()
-                data = await response.json()
-                logger.info(f"Trial registered for user {telegram_id}")
-                return data
+                return await response.json()
 
         except aiohttp.ClientResponseError as e:
-            logger.error(f"HTTP error registering trial: {e.status} - {e.message}")
+            logger.error(f"HTTP error registering trial: {e.status}")
             raise SubsoraApiClientError(f"Registration failed: {e.status}") from e
         except aiohttp.ClientError as e:
             logger.error(f"Network error registering trial: {e}")

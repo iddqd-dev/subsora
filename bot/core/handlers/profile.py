@@ -7,7 +7,7 @@ from ..api_client import api_client, UserNotFoundError, SubsoraApiClientError
 from ..services.user_service import UserService
 from ..constants import CallbackData
 from ..texts import BotTexts
-from ..keyboards.inline import get_profile_menu, get_trial_menu
+from ..keyboards.inline import get_profile_menu, get_trial_menu, get_plans_menu
 from ..keyboards.inline import get_instruction_keyboard
 
 logger = logging.getLogger(__name__)
@@ -85,33 +85,38 @@ async def show_subscription_url(callback: CallbackQuery):
 async def activate_trial(callback: CallbackQuery):
     """Активирует пробный период для пользователя."""
     user = callback.from_user
-
-    # Показываем индикатор загрузки
-    await callback.message.edit_text(BotTexts.TRIAL_CREATING)
+    await callback.message.edit_text("⏳ Проверяю доступность пробного периода...")
 
     try:
-        # Регистрируем пользователя с триалом
         registration_data = await api_client.register_trial(
             telegram_id=user.id,
             full_name=user.full_name,
             username=user.username
         )
 
-        # Форматируем сообщение об успехе
         text = user_service.format_trial_success(registration_data)
 
+        # Успех! Показываем профиль с кнопкой "Ссылка"
         await callback.message.edit_text(
             text,
             reply_markup=get_profile_menu(has_subscription=True)
         )
 
-        logger.info(f"Trial activated for user {user.id}")
-
     except SubsoraApiClientError as e:
-        logger.error(f"Error activating trial for {user.id}: {e}")
-        await callback.message.edit_text(
-            BotTexts.TRIAL_ERROR,
-            reply_markup=get_trial_menu()
-        )
+        # Обрабатываем нашу специальную ошибку
+        if str(e) == "ALREADY_USED":
+            await callback.message.edit_text(
+                "❌ <b>Ошибка получения триала</b>\n\n"
+                "Вы уже использовали пробный период или у вас была подписка ранее.\n"
+                "Пожалуйста, выберите один из платных тарифов.",
+                reply_markup=get_plans_menu(await api_client.get_available_plans()),
+                parse_mode="HTML"
+            )
+        else:
+            logger.error(f"Error activating trial for {user.id}: {e}")
+            await callback.message.edit_text(
+                "❌ Не удалось выдать пробный доступ.\nВозможно, технические работы. Попробуйте позже.",
+                reply_markup=get_trial_menu()
+            )
 
     await callback.answer()

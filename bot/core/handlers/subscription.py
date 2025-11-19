@@ -100,7 +100,7 @@ async def mock_payment_process(callback: CallbackQuery):
         """💳 *Тестовый режим оплаты*
 
 В данный момент автоматическая оплата находится в разработке.
-Для покупки подписки напишите администратору: @admin_username
+Для покупки подписки напишите администратору: @admin\_username
 Укажите ваш ID: `{}`
 """.format(callback.from_user.id),
         reply_markup=get_back_button()
