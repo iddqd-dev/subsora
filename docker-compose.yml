@@ -39,6 +39,10 @@ services:
         published: 48000
         protocol: tcp
         mode: host
+    configs:
+      - source: backend_env_config
+        target: /app/.env
+        mode: 0444
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -142,6 +146,8 @@ volumes:
 configs:
   bot_env_config:
     file: /root/subsora/bot/.env
+  backend_env_config:
+    file: /root/subsora/.env
 
 networks:
   subsora_network:
