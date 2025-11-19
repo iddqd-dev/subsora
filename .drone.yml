@@ -51,8 +51,18 @@ steps:
         - mkdir -p /root/subsora
         - cd /root/subsora
         - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+
+        # 1. Создаем сеть (чтобы не упало, если это первый запуск)
+        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+
+        # 2. Накатываем стек (создаст сервис, если его нет)
+        # ВАЖНО: Убедись, что файл называется docker-compose.yml или поправь название тут
+        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+
+        # 3. Принудительно обновляем (чтобы подтянуть свежий latest)
         - docker pull cicd.zerity.ru:55000/subsora/backend:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
+
         - docker image prune -f
         - echo "Backend deployed!"
     depends_on:
@@ -119,8 +129,14 @@ steps:
         - mkdir -p /root/subsora
         - cd /root/subsora
         - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+
+        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+
+        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+
         - docker pull cicd.zerity.ru:55000/subsora/frontend:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:latest subsora_frontend
+
         - docker image prune -f
         - echo "Frontend deployed!"
     depends_on:
@@ -187,8 +203,14 @@ steps:
         - mkdir -p /root/subsora
         - cd /root/subsora
         - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+
+        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+
+        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+
         - docker pull cicd.zerity.ru:55000/subsora/bot:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:latest subsora_bot
+
         - docker image prune -f
         - echo "Bot deployed!"
     depends_on:
@@ -237,9 +259,17 @@ steps:
         - cd /root/subsora
         - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - export $(cat .env | grep -v '^#' | xargs)
+
+        # Удаляем стек
         - docker stack rm subsora || echo "Stack not found, proceeding."
         - echo "Waiting for stack to be removed..."
         - sleep 15
+
+        # ВАЖНО: Восстанавливаем сеть ПЕРЕД деплоем
+        - echo "Ensuring network exists..."
+        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+
+        # Деплоим
         - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
         - echo "✅ Full stack redeployed!"
         - sleep 10
