@@ -53,6 +53,7 @@ steps:
         - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - docker pull cicd.zerity.ru:55000/subsora/backend:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
+        - docker image prune -f
         - echo "Backend deployed!"
     depends_on:
       - docker-build-push
@@ -120,6 +121,7 @@ steps:
         - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - docker pull cicd.zerity.ru:55000/subsora/frontend:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:latest subsora_frontend
+        - docker image prune -f
         - echo "Frontend deployed!"
     depends_on:
       - docker-build-push
@@ -187,6 +189,7 @@ steps:
         - if [ -d ".git" ]; then git pull origin master; else git clone https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - docker pull cicd.zerity.ru:55000/subsora/bot:latest
         - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:latest subsora_bot
+        - docker image prune -f
         - echo "Bot deployed!"
     depends_on:
       - docker-build-push
