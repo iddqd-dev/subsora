@@ -332,6 +332,7 @@ steps:
     settings:
       host:
         from_secret: ssh_host_dev  # Здесь должен быть IP 78.36.157.227
+      port: 55522
       username:
         from_secret: ssh_user_dev
       key:
@@ -407,6 +408,7 @@ steps:
     settings:
       host:
         from_secret: ssh_host_dev
+      port: 55522
       username:
         from_secret: ssh_user_dev
       key:
@@ -481,6 +483,7 @@ steps:
     settings:
       host:
         from_secret: ssh_host_dev
+      port: 55522
       username:
         from_secret: ssh_user_dev
       key:
@@ -535,6 +538,7 @@ steps:
     settings:
       host:
         from_secret: ssh_host_dev
+      port: 55522
       username:
         from_secret: ssh_user_dev
       key:
