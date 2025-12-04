@@ -342,7 +342,7 @@ steps:
         - mkdir -p /opt/subsora
         - cd /opt/subsora
         # Клонируем или пуллим ветку dev
-        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev git@cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
 
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
 
@@ -417,7 +417,7 @@ steps:
         - echo "Deploying frontend (DEV)..."
         - mkdir -p /opt/subsora
         - cd /opt/subsora
-        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev git@cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
 
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
 
@@ -492,7 +492,7 @@ steps:
         - echo "Deploying bot (DEV)..."
         - mkdir -p /opt/subsora
         - cd /opt/subsora
-        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev git@cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
 
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
 
@@ -547,7 +547,7 @@ steps:
         - echo "🔄 Full redeployment triggered (DEV)..."
         - mkdir -p /opt/subsora
         - cd /opt/subsora
-        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev git@cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
         - export $(cat .env | grep -v '^#' | xargs)
 
         - docker stack rm subsora || echo "Stack not found, proceeding."
