@@ -560,7 +560,7 @@ steps:
         # Обратите внимание: docker-compose.yml на сервере dev должен использовать образы с тегом :dev,
         # либо вы должны переопределять их здесь, но обычно проще иметь отдельный compose для dev или использовать переменные окружения.
         # Ниже деплой стандартного compose. Убедитесь, что compose файл на ветке dev ссылается на правильные образы.
-        - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
+        - docker stack deploy -c docker-compose.dev.yml subsora --with-registry-auth
         - echo "✅ Full stack DEV redeployed!"
         - sleep 10
         - docker stack services subsora
