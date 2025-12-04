@@ -312,9 +312,9 @@ steps:
     privileged: true
     environment:
       DOCKER_USERNAME:
-        from_secret: docker_username_dev
+        from_secret: DOCKER_USERNAME
       DOCKER_PASSWORD:
-        from_secret: docker_password_dev
+        from_secret: DOCKER_PASSWORD
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false &
       - sleep 10
@@ -388,9 +388,9 @@ steps:
     privileged: true
     environment:
       DOCKER_USERNAME:
-        from_secret: docker_username_dev
+        from_secret: DOCKER_USERNAME
       DOCKER_PASSWORD:
-        from_secret: docker_password_dev
+        from_secret: DOCKER_PASSWORD
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false &
       - sleep 10
@@ -463,9 +463,9 @@ steps:
     privileged: true
     environment:
       DOCKER_USERNAME:
-        from_secret: docker_username_dev
+        from_secret: DOCKER_USERNAME
       DOCKER_PASSWORD:
-        from_secret: docker_password_dev
+        from_secret: DOCKER_PASSWORD
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false &
       - sleep 10
