@@ -34,3 +34,4 @@ app.add_exception_handler(ValueError, validation_exception_handler) # type: igno
 
 app.include_router(api_router)
 
+# Just CI trigger 4 build docker image

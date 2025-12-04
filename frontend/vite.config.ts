@@ -9,3 +9,5 @@ export default defineConfig({
     port: 5173
   }
 })
+
+// Just CI trigger 4 build docker image
