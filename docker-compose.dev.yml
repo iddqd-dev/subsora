@@ -143,9 +143,9 @@ volumes:
 
 configs:
   bot_env_config:
-    file: /root/subsora/bot/.env
+    file: /opt/subsora/bot/.env
   backend_env_config:
-    file: /root/subsora/.env
+    file: /opt/subsora/.env
 
 networks:
   subsora_network:
