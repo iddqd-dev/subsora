@@ -283,3 +283,288 @@ trigger:
     - master
   event:
     - push
+
+# ==================================
+# ===       DEV PIPELINES        ===
+# ==================================
+
+---
+
+kind: pipeline
+type: docker
+name: subsora-backend-dev
+
+steps:
+  - name: check-changes
+    image: alpine/git
+    commands:
+      - echo "Checking for changes in 'backend/' directory (DEV)..."
+      - |
+        if git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "backend/"; then
+          echo "Changes detected in 'backend/'. Continuing pipeline."
+        else
+          echo "No changes in 'backend/'. Skipping pipeline."
+          exit 78
+        fi
+
+  - name: docker-build-push
+    image: docker:dind
+    privileged: true
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username_dev
+      DOCKER_PASSWORD:
+        from_secret: docker_password_dev
+    commands:
+      - dockerd --host=unix:///var/run/docker.sock --tls=false &
+      - sleep 10
+      - until docker info; do sleep 1; done
+      - cd backend
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      # Используем тег :dev
+      - docker build -t cicd.zerity.ru:55000/subsora/backend:dev .
+      - docker push cicd.zerity.ru:55000/subsora/backend:dev
+    depends_on:
+      - check-changes
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host:
+        from_secret: ssh_host_dev  # Здесь должен быть IP 78.36.157.227
+      username:
+        from_secret: ssh_user_dev
+      key:
+        from_secret: ssh_key_dev
+      script:
+        - echo "Deploying backend (DEV)..."
+        - mkdir -p /root/subsora
+        - cd /root/subsora
+        # Клонируем или пуллим ветку dev
+        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+
+        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+
+        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+
+        # Обновляем на образ с тегом :dev
+        - docker pull cicd.zerity.ru:55000/subsora/backend:dev
+        - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:dev subsora_backend
+
+        - docker image prune -f
+        - echo "Backend DEV deployed!"
+    depends_on:
+      - docker-build-push
+
+trigger:
+  branch:
+    - dev
+  event:
+    - push
+
+---
+
+# subsora-frontend-dev.yml
+kind: pipeline
+type: docker
+name: subsora-frontend-dev
+
+steps:
+  - name: check-changes
+    image: alpine/git
+    commands:
+      - echo "Checking for changes in 'frontend/' directory (DEV)..."
+      - |
+        if git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "frontend/"; then
+          echo "Changes detected in 'frontend/'. Continuing pipeline."
+        else
+          echo "No changes in 'frontend/'. Skipping pipeline."
+          exit 78
+        fi
+
+  - name: docker-build-push
+    image: docker:dind
+    privileged: true
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username_dev
+      DOCKER_PASSWORD:
+        from_secret: docker_password_dev
+    commands:
+      - dockerd --host=unix:///var/run/docker.sock --tls=false &
+      - sleep 10
+      - until docker info; do sleep 1; done
+      - cd frontend
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      # Используем тег :dev
+      - docker build -t cicd.zerity.ru:55000/subsora/frontend:dev .
+      - docker push cicd.zerity.ru:55000/subsora/frontend:dev
+    depends_on:
+      - check-changes
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host:
+        from_secret: ssh_host_dev
+      username:
+        from_secret: ssh_user_dev
+      key:
+        from_secret: ssh_key_dev
+      script:
+        - echo "Deploying frontend (DEV)..."
+        - mkdir -p /root/subsora
+        - cd /root/subsora
+        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+
+        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+
+        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+
+        # Обновляем на образ с тегом :dev
+        - docker pull cicd.zerity.ru:55000/subsora/frontend:dev
+        - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:dev subsora_frontend
+
+        - docker image prune -f
+        - echo "Frontend DEV deployed!"
+    depends_on:
+      - docker-build-push
+
+trigger:
+  branch:
+    - dev
+  event:
+    - push
+
+---
+
+# subsora-bot-dev.yml
+kind: pipeline
+type: docker
+name: subsora-bot-dev
+
+steps:
+  - name: check-changes
+    image: alpine/git
+    commands:
+      - echo "Checking for changes in 'bot/' directory (DEV)..."
+      - |
+        if git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "bot/"; then
+          echo "Changes detected in 'bot/'. Continuing pipeline."
+        else
+          echo "No changes in 'bot/'. Skipping pipeline."
+          exit 78
+        fi
+
+  - name: docker-build-push
+    image: docker:dind
+    privileged: true
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username_dev
+      DOCKER_PASSWORD:
+        from_secret: docker_password_dev
+    commands:
+      - dockerd --host=unix:///var/run/docker.sock --tls=false &
+      - sleep 10
+      - until docker info; do sleep 1; done
+      - cd bot
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      # Используем тег :dev
+      - docker build -t cicd.zerity.ru:55000/subsora/bot:dev .
+      - docker push cicd.zerity.ru:55000/subsora/bot:dev
+    depends_on:
+      - check-changes
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    settings:
+      host:
+        from_secret: ssh_host_dev
+      username:
+        from_secret: ssh_user_dev
+      key:
+        from_secret: ssh_key_dev
+      script:
+        - echo "Deploying bot (DEV)..."
+        - mkdir -p /root/subsora
+        - cd /root/subsora
+        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+
+        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+
+        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+
+        # Обновляем на образ с тегом :dev
+        - docker pull cicd.zerity.ru:55000/subsora/bot:dev
+        - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:dev subsora_bot
+
+        - docker image prune -f
+        - echo "Bot DEV deployed!"
+    depends_on:
+      - docker-build-push
+
+trigger:
+  branch:
+    - dev
+  event:
+    - push
+
+---
+
+# subsora-full-redeploy-dev.yml
+kind: pipeline
+type: docker
+name: subsora-full-redeploy-dev
+
+steps:
+  - name: check-changes
+    image: alpine/git
+    commands:
+      - echo "Checking for changes in 'docker-compose.yml' or '.drone.yml' (DEV)..."
+      - |
+        if git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -qE "(docker-compose.yml|.drone.yml)"; then
+          echo "Infrastructure changes detected. Continuing full redeploy."
+        else
+          echo "No infrastructure changes. Skipping pipeline."
+          exit 78
+        fi
+
+  - name: full-redeploy
+    image: appleboy/drone-ssh
+    settings:
+      host:
+        from_secret: ssh_host_dev
+      username:
+        from_secret: ssh_user_dev
+      key:
+        from_secret: ssh_key_dev
+      script:
+        - echo "🔄 Full redeployment triggered (DEV)..."
+        - mkdir -p /root/subsora
+        - cd /root/subsora
+        - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev https://cicd.zerity.ru:55350/lokiboo_arud/subsora.git .; fi
+        - export $(cat .env | grep -v '^#' | xargs)
+
+        - docker stack rm subsora || echo "Stack not found, proceeding."
+        - echo "Waiting for stack to be removed..."
+        - sleep 15
+
+        - echo "Ensuring network exists..."
+        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+
+        # Обратите внимание: docker-compose.yml на сервере dev должен использовать образы с тегом :dev,
+        # либо вы должны переопределять их здесь, но обычно проще иметь отдельный compose для dev или использовать переменные окружения.
+        # Ниже деплой стандартного compose. Убедитесь, что compose файл на ветке dev ссылается на правильные образы.
+        - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
+        - echo "✅ Full stack DEV redeployed!"
+        - sleep 10
+        - docker stack services subsora
+    depends_on:
+      - check-changes
+
+trigger:
+  branch:
+    - dev
+  event:
+    - push

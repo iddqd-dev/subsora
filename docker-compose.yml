@@ -34,15 +34,22 @@ services:
 
   backend:
     image: cicd.zerity.ru:55000/subsora/backend:latest
+    pid: host
     ports:
       - target: 8000
         published: 48000
         protocol: tcp
         mode: host
+    volumes:
+      - xray_config:/etc/xray_shared
+      - /var/run/docker.sock:/var/run/docker.sock
     configs:
       - source: backend_env_config
         target: /app/.env
         mode: 0444
+    environment:
+      - XRAY_CONTAINER_NAME=subsora-xray
+      - XRAY_CONFIG_PATH=/etc/xray_shared/config.json
     deploy:
       endpoint_mode: dnsrr
       restart_policy:
@@ -109,9 +116,30 @@ services:
     networks:
       - subsora_network
 
+  xray:
+    image: ghcr.io/xtls/xray-core:latest
+    container_name: subsora-xray
+    hostname: xray
+    volumes:
+      - xray_config:/etc/xray
+      - ./xray_logs:/var/log/xray
+    ports:
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+    environment:
+      - XRAY_LOCATION_ASSET=/usr/share/xray/
+    deploy:
+      restart_policy:
+        condition: any
+    networks:
+      - subsora_network
+
 volumes:
   postgres_data:
     external: true
+  xray_config:
 
 configs:
   bot_env_config:
