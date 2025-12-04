@@ -319,11 +319,22 @@ steps:
       - dockerd --host=unix:///var/run/docker.sock --tls=false &
       - sleep 10
       - until docker info; do sleep 1; done
+
+      # --- НАСТРОЙКА BUILDX ДЛЯ МУЛЬТИ-АРХИТЕКТУРНОЙ СБОРКИ ---
+      - docker run --rm --privileged tonistiigi/binfmt --install all
+      - docker buildx create --use
+      # ---------------------------------------------------------
+
       - cd backend
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      # Используем тег :dev
-      - docker build -t cicd.zerity.ru:55000/subsora/backend:dev .
-      - docker push cicd.zerity.ru:55000/subsora/backend:dev
+
+      # Собираем и пушим мульти-архитектурный образ одной командой
+      - |
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --tag cicd.zerity.ru:55000/subsora/backend:dev \
+          --push \
+          .
     depends_on:
       - check-changes
 
@@ -331,7 +342,7 @@ steps:
     image: appleboy/drone-ssh
     settings:
       host:
-        from_secret: ssh_host_dev  # Здесь должен быть IP 78.36.157.227
+        from_secret: ssh_host_dev
       port: 55522
       username:
         from_secret: ssh_user_dev
@@ -341,17 +352,12 @@ steps:
         - echo "Deploying backend (DEV)..."
         - mkdir -p /opt/subsora
         - cd /opt/subsora
-        # Клонируем или пуллим ветку dev
         - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev git@cicd.zerity.ru:lokiboo_arud/subsora.git .; fi
 
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
-
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
-
-        # Обновляем на образ с тегом :dev
         - docker pull cicd.zerity.ru:55000/subsora/backend:dev
         - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:dev subsora_backend
-
         - docker image prune -f
         - echo "Backend DEV deployed!"
     depends_on:
@@ -395,11 +401,22 @@ steps:
       - dockerd --host=unix:///var/run/docker.sock --tls=false &
       - sleep 10
       - until docker info; do sleep 1; done
+
+      # --- НАСТРОЙКА BUILDX ДЛЯ МУЛЬТИ-АРХИТЕКТУРНОЙ СБОРКИ ---
+      - docker run --rm --privileged tonistiigi/binfmt --install all
+      - docker buildx create --use
+      # ---------------------------------------------------------
+
       - cd frontend
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      # Используем тег :dev
-      - docker build -t cicd.zerity.ru:55000/subsora/frontend:dev .
-      - docker push cicd.zerity.ru:55000/subsora/frontend:dev
+
+      # Собираем и пушим мульти-архитектурный образ одной командой
+      - |
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --tag cicd.zerity.ru:55000/subsora/frontend:dev \
+          --push \
+          .
     depends_on:
       - check-changes
 
@@ -420,13 +437,9 @@ steps:
         - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev git@cicd.zerity.ru:lokiboo_arud/subsora.git .; fi
 
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
-
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
-
-        # Обновляем на образ с тегом :dev
         - docker pull cicd.zerity.ru:55000/subsora/frontend:dev
         - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:dev subsora_frontend
-
         - docker image prune -f
         - echo "Frontend DEV deployed!"
     depends_on:
@@ -470,11 +483,22 @@ steps:
       - dockerd --host=unix:///var/run/docker.sock --tls=false &
       - sleep 10
       - until docker info; do sleep 1; done
+
+      # --- НАСТРОЙКА BUILDX ДЛЯ МУЛЬТИ-АРХИТЕКТУРНОЙ СБОРКИ ---
+      - docker run --rm --privileged tonistiigi/binfmt --install all
+      - docker buildx create --use
+      # ---------------------------------------------------------
+
       - cd bot
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      # Используем тег :dev
-      - docker build -t cicd.zerity.ru:55000/subsora/bot:dev .
-      - docker push cicd.zerity.ru:55000/subsora/bot:dev
+
+      # Собираем и пушим мульти-архитектурный образ одной командой
+      - |
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --tag cicd.zerity.ru:55000/subsora/bot:dev \
+          --push \
+          .
     depends_on:
       - check-changes
 
@@ -495,13 +519,9 @@ steps:
         - if [ -d ".git" ]; then git checkout dev && git pull origin dev; else git clone -b dev git@cicd.zerity.ru:lokiboo_arud/subsora.git .; fi
 
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
-
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
-
-        # Обновляем на образ с тегом :dev
         - docker pull cicd.zerity.ru:55000/subsora/bot:dev
         - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:dev subsora_bot
-
         - docker image prune -f
         - echo "Bot DEV deployed!"
     depends_on:
@@ -557,9 +577,6 @@ steps:
         - echo "Ensuring network exists..."
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
 
-        # Обратите внимание: docker-compose.yml на сервере dev должен использовать образы с тегом :dev,
-        # либо вы должны переопределять их здесь, но обычно проще иметь отдельный compose для dev или использовать переменные окружения.
-        # Ниже деплой стандартного compose. Убедитесь, что compose файл на ветке dev ссылается на правильные образы.
         - docker pull cicd.zerity.ru:55000/subsora/bot:dev
         - docker stack deploy -c docker-compose.dev.yml subsora --with-registry-auth
         - echo "✅ Full stack DEV redeployed!"
