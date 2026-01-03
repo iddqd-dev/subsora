@@ -1,22 +1,14 @@
-# ========================================================
-# ===          PRODUCTION PIPELINES (AMD64)            ===
-# ========================================================
-
----
 kind: pipeline
 type: docker
 name: backend-prod
-
 platform:
   os: linux
   arch: amd64
-
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "backend/"; then echo "No changes in backend/"; exit 78; fi
-
   - name: build-push
     image: docker:dind
     privileged: true
@@ -28,7 +20,6 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
-
   - name: deploy
     image: appleboy/drone-ssh
     settings:
@@ -39,26 +30,21 @@ steps:
         - cd /root/subsora && git pull origin master
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
         - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
-
 trigger:
   branch: [main, master]
   event: [push]
-
 ---
 kind: pipeline
 type: docker
 name: frontend-prod
-
 platform:
   os: linux
   arch: amd64
-
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "frontend/"; then exit 78; fi
-
   - name: build-push
     image: docker:dind
     privileged: true
@@ -70,7 +56,6 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
-
   - name: deploy
     image: appleboy/drone-ssh
     settings:
@@ -81,26 +66,21 @@ steps:
         - cd /root/subsora && git pull origin master
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
         - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:latest subsora_frontend
-
 trigger:
   branch: [main, master]
   event: [push]
-
 ---
 kind: pipeline
 type: docker
 name: bot-prod
-
 platform:
   os: linux
   arch: amd64
-
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "bot/"; then exit 78; fi
-
   - name: build-push
     image: docker:dind
     privileged: true
@@ -112,7 +92,6 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
-
   - name: deploy
     image: appleboy/drone-ssh
     settings:
@@ -123,26 +102,21 @@ steps:
         - cd /root/subsora && git pull origin master
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
         - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:latest subsora_bot
-
 trigger:
   branch: [main, master]
   event: [push]
-
 ---
 kind: pipeline
 type: docker
 name: full-redeploy-prod
-
 platform:
   os: linux
   arch: amd64
-
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -qE "(docker-compose.yml|.drone.yml)"; then exit 78; fi
-
   - name: deploy
     image: appleboy/drone-ssh
     settings:
@@ -156,30 +130,21 @@ steps:
         - sleep 15
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
         - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
-
 trigger:
   branch: [main, master]
   event: [push]
-
-# ========================================================
-# ===         DEVELOPMENT PIPELINES (ARM64)            ===
-# ========================================================
-
 ---
 kind: pipeline
 type: docker
 name: backend-dev
-
 platform:
   os: linux
   arch: arm64
-
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "backend/"; then exit 78; fi
-
   - name: build-push
     image: docker:dind
     privileged: true
@@ -191,7 +156,6 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
       DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
-
   - name: deploy
     image: appleboy/drone-ssh
     settings:
@@ -203,26 +167,21 @@ steps:
         - cd /opt/subsora && git checkout dev && git pull origin dev
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
         - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:dev subsora_backend
-
 trigger:
   branch: [dev]
   event: [push]
-
 ---
 kind: pipeline
 type: docker
 name: frontend-dev
-
 platform:
   os: linux
   arch: arm64
-
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "frontend/"; then exit 78; fi
-
   - name: build-push
     image: docker:dind
     privileged: true
@@ -234,7 +193,6 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
       DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
-
   - name: deploy
     image: appleboy/drone-ssh
     settings:
@@ -246,26 +204,21 @@ steps:
         - cd /opt/subsora && git checkout dev && git pull origin dev
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
         - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:dev subsora_frontend
-
 trigger:
   branch: [dev]
   event: [push]
-
 ---
 kind: pipeline
 type: docker
 name: bot-dev
-
 platform:
   os: linux
   arch: arm64
-
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "bot/"; then exit 78; fi
-
   - name: build-push
     image: docker:dind
     privileged: true
@@ -277,7 +230,6 @@ steps:
     environment:
       DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
       DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
-
   - name: deploy
     image: appleboy/drone-ssh
     settings:
@@ -289,26 +241,21 @@ steps:
         - cd /opt/subsora && git checkout dev && git pull origin dev
         - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
         - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:dev subsora_bot
-
 trigger:
   branch: [dev]
   event: [push]
-
 ---
 kind: pipeline
 type: docker
 name: full-redeploy-dev
-
 platform:
   os: linux
   arch: arm64
-
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -qE "(docker-compose.yml|docker-compose.dev.yml|.drone.yml)"; then exit 78; fi
-
   - name: deploy
     image: appleboy/drone-ssh
     settings:
@@ -323,7 +270,6 @@ steps:
         - sleep 15
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
         - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
-
 trigger:
   branch: [dev]
   event: [push]
