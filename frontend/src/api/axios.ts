@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'https://subsora.mywire.org:48800/api/v1',
+  baseURL: 'https://subsora.mywire.org:48080/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
