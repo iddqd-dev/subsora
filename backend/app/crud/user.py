@@ -54,4 +54,12 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         await db.refresh(db_obj)
         return db_obj
 
+    async def update_password(self, db: AsyncSession, *, db_obj: User, new_password: str) -> User:
+        """Обновляет пароль пользователя."""
+        db_obj.hashed_password = hash_password(new_password)
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+        return db_obj
+
 user = CRUDUser(User)

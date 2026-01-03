@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
@@ -19,6 +19,10 @@ class UserCreateFromTelegram(BaseModel):
     telegram_id: int
     full_name: str
     username: Optional[str] = None
+
+class UserUpdatePassword(BaseModel):
+    current_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6)
 
 class UserRead(UserBase):
     id: int

@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app import crud
-from backend.app.schemas.user import UserRead, UserUpdate
+from backend.app.core.security import verify_password
+from backend.app.schemas.user import UserRead, UserUpdate, UserUpdatePassword
 from backend.app.db.session import get_async_session
 from backend.app.api.v1 import deps
 from backend.app.models.user import User
@@ -29,6 +30,38 @@ async def update_user_me(
     """Обновить информацию о текущем пользователе"""
     user = await crud.user.update(db, db_obj=current_user, obj_in=user_in)
     return user
+
+
+@router.post("/me/change-password", status_code=status.HTTP_200_OK)
+async def change_user_password(
+        *,
+        db: AsyncSession = Depends(get_async_session),
+        password_in: UserUpdatePassword,
+        current_user: User = Depends(deps.get_current_active_user),
+):
+    """
+    Смена пароля текущего пользователя.
+    """
+    # 1. Проверяем старый пароль
+    if not verify_password(password_in.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный текущий пароль",
+        )
+
+    # 2. Проверяем, что новый пароль не совпадает со старым (опционально)
+    if password_in.current_password == password_in.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Новый пароль не может совпадать со старым",
+        )
+
+    # 3. Обновляем
+    await crud.user.update_password(
+        db, db_obj=current_user, new_password=password_in.new_password
+    )
+
+    return {"message": "Пароль успешно изменен"}
 
 @router.get("/", response_model=List[UserRead])
 async def read_users(
