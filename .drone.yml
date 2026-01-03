@@ -321,7 +321,7 @@ steps:
       - until docker info; do sleep 1; done
 
       # --- НАСТРОЙКА BUILDX ДЛЯ МУЛЬТИ-АРХИТЕКТУРНОЙ СБОРКИ ---
-      - docker run --rm --privileged tonistiigi/binfmt --install all
+      - docker run --privileged --rm tonistiigi/binfmt --install arm64
       - docker buildx create --use
       # ---------------------------------------------------------
 
