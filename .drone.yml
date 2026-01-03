@@ -6,6 +6,7 @@
 kind: pipeline
 type: docker
 name: backend-prod
+
 platform:
   os: linux
   arch: amd64
@@ -19,14 +20,14 @@ steps:
   - name: build-push
     image: docker:dind
     privileged: true
-    environment:
-      DOCKER_USERNAME: { from_secret: docker_username }
-      DOCKER_PASSWORD: { from_secret: docker_password }
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t cicd.zerity.ru:55000/subsora/backend:latest ./backend
       - docker push cicd.zerity.ru:55000/subsora/backend:latest
+    environment:
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
 
   - name: deploy
     image: appleboy/drone-ssh
@@ -47,6 +48,7 @@ trigger:
 kind: pipeline
 type: docker
 name: frontend-prod
+
 platform:
   os: linux
   arch: amd64
@@ -60,14 +62,14 @@ steps:
   - name: build-push
     image: docker:dind
     privileged: true
-    environment:
-      DOCKER_USERNAME: { from_secret: docker_username }
-      DOCKER_PASSWORD: { from_secret: docker_password }
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t cicd.zerity.ru:55000/subsora/frontend:latest ./frontend
       - docker push cicd.zerity.ru:55000/subsora/frontend:latest
+    environment:
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
 
   - name: deploy
     image: appleboy/drone-ssh
@@ -88,6 +90,7 @@ trigger:
 kind: pipeline
 type: docker
 name: bot-prod
+
 platform:
   os: linux
   arch: amd64
@@ -101,14 +104,14 @@ steps:
   - name: build-push
     image: docker:dind
     privileged: true
-    environment:
-      DOCKER_USERNAME: { from_secret: docker_username }
-      DOCKER_PASSWORD: { from_secret: docker_password }
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t cicd.zerity.ru:55000/subsora/bot:latest ./bot
       - docker push cicd.zerity.ru:55000/subsora/bot:latest
+    environment:
+      DOCKER_USERNAME: { from_secret: docker_username }
+      DOCKER_PASSWORD: { from_secret: docker_password }
 
   - name: deploy
     image: appleboy/drone-ssh
@@ -129,6 +132,7 @@ trigger:
 kind: pipeline
 type: docker
 name: full-redeploy-prod
+
 platform:
   os: linux
   arch: amd64
@@ -165,6 +169,7 @@ trigger:
 kind: pipeline
 type: docker
 name: backend-dev
+
 platform:
   os: linux
   arch: arm64
@@ -178,14 +183,14 @@ steps:
   - name: build-push
     image: docker:dind
     privileged: true
-    environment:
-      DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
-      DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t cicd.zerity.ru:55000/subsora/backend:dev ./backend
       - docker push cicd.zerity.ru:55000/subsora/backend:dev
+    environment:
+      DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
+      DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
 
   - name: deploy
     image: appleboy/drone-ssh
@@ -207,6 +212,7 @@ trigger:
 kind: pipeline
 type: docker
 name: frontend-dev
+
 platform:
   os: linux
   arch: arm64
@@ -220,14 +226,14 @@ steps:
   - name: build-push
     image: docker:dind
     privileged: true
-    environment:
-      DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
-      DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t cicd.zerity.ru:55000/subsora/frontend:dev ./frontend
       - docker push cicd.zerity.ru:55000/subsora/frontend:dev
+    environment:
+      DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
+      DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
 
   - name: deploy
     image: appleboy/drone-ssh
@@ -249,6 +255,7 @@ trigger:
 kind: pipeline
 type: docker
 name: bot-dev
+
 platform:
   os: linux
   arch: arm64
@@ -262,14 +269,14 @@ steps:
   - name: build-push
     image: docker:dind
     privileged: true
-    environment:
-      DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
-      DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
     commands:
       - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
       - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
       - docker build -t cicd.zerity.ru:55000/subsora/bot:dev ./bot
       - docker push cicd.zerity.ru:55000/subsora/bot:dev
+    environment:
+      DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
+      DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
 
   - name: deploy
     image: appleboy/drone-ssh
@@ -291,6 +298,7 @@ trigger:
 kind: pipeline
 type: docker
 name: full-redeploy-dev
+
 platform:
   os: linux
   arch: arm64
