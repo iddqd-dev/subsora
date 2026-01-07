@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional, List, Tuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-ENV_FILE_PATH = "/app/.env"
+ENV_FILE_PATH = "/app/backend/.env"
 
 
 class Settings(BaseSettings):

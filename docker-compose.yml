@@ -43,8 +43,8 @@ services:
       - xray_config:/etc/xray_shared
       - /var/run/docker.sock:/var/run/docker.sock
     configs:
-      - source: backend_env_config
-        target: /app/.env
+      - source: backend_env_config_v3
+        target: /app/backend/.env
         mode: 0444
     environment:
       - XRAY_CONTAINER_NAME=subsora-xray
@@ -143,7 +143,7 @@ volumes:
 configs:
   bot_env_config:
     file: /root/subsora/bot/.env
-  backend_env_config:
+  backend_env_config_v3:
     file: /root/subsora/.env
 
 networks:
