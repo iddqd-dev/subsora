@@ -62,8 +62,8 @@ class VpnManager:
             "log": {
                 "loglevel": "warning",
                 # Пути внутри контейнера Xray!
-                "access": "/var/log/xray/access.log",
-                "error": "/var/log/xray/error.log"
+                "access": "/app/log/xray/access.log",
+                "error": "/app/log/xray/error.log"
             },
             "api": {
                 "tag": "api",
