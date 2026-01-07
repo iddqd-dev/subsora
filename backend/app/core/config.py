@@ -54,12 +54,13 @@ class Settings(BaseSettings):
     VPN_PANEL_SSL: bool = True
 
     # Telegram bot - обязательные поля
-    TELEGRAM_BOT_TOKEN: str = ""
-    TELEGRAM_BOT_SECRET: str = ""
+    TELEGRAM_BOT_TOKEN: str = "123"
+    TELEGRAM_BOT_SECRET: str = "123"
 
     class Config:
-        # Используем .env файл только если он существует
+        # Используем .env файл
         env_file = ENV_FILE_PATH
+        print(env_file)
         case_sensitive = True
         # Приоритет переменным окружения над .env файлом
         env_file_encoding = 'utf-8'
