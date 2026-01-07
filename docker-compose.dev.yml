@@ -45,7 +45,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     configs:
       - source: backend_env_config
-        target: /app/.env
+        target: /app/backend/.env
         mode: 0444
     environment:
       - XRAY_CONTAINER_NAME=subsora-xray
