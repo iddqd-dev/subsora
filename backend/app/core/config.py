@@ -3,7 +3,8 @@ from pydantic_settings import BaseSettings
 from typing import Optional, List, Tuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-ENV_FILE_PATH = os.path.join(BASE_DIR, ".env")
+ENV_FILE_PATH = "/app/.env"
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Subsora"
@@ -53,14 +54,16 @@ class Settings(BaseSettings):
     VPN_PANEL_SSL: bool = True
 
     # Telegram bot - обязательные поля
-    TELEGRAM_BOT_TOKEN: str
-    TELEGRAM_BOT_SECRET: str
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_BOT_SECRET: str = ""
 
     class Config:
         # Используем .env файл только если он существует
-        env_file = ENV_FILE_PATH if os.path.exists(ENV_FILE_PATH) else None
+        env_file = ENV_FILE_PATH
         case_sensitive = True
         # Приоритет переменным окружения над .env файлом
         env_file_encoding = 'utf-8'
+        extra = 'ignore'
+
 
 settings = Settings()
