@@ -202,7 +202,7 @@ steps:
       key: { from_secret: ssh_key_dev }
       script:
         - cd /opt/subsora && git checkout dev && git pull origin dev
-        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+        - docker stack deploy --with-registry-auth -c docker-compose.dev.yml subsora
         - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:dev subsora_frontend
 trigger:
   branch: [dev]
@@ -239,7 +239,7 @@ steps:
       key: { from_secret: ssh_key_dev }
       script:
         - cd /opt/subsora && git checkout dev && git pull origin dev
-        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+        - docker stack deploy --with-registry-auth -c docker-compose.dev.yml subsora
         - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:dev subsora_bot
 trigger:
   branch: [dev]
@@ -269,7 +269,7 @@ steps:
         - docker stack rm subsora || true
         - sleep 15
         - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
-        - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
+        - docker stack deploy -c docker-compose.dev.yml subsora --with-registry-auth
 trigger:
   branch: [dev]
   event: [push]

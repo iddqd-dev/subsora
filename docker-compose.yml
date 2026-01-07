@@ -147,10 +147,10 @@ volumes:
 secrets:
   backend_env_config:
     file: /root/subsora/.env
-    name: backend_env_config_0000000000000002
+    name: backend_env_config_0000000000000003
   bot_env_config:
     file: /root/subsora/bot/.env
-    name: bot_env_config_00000000000000000002
+    name: bot_env_config_00000000000000000003
 
 networks:
   subsora_network:
