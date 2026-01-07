@@ -42,10 +42,12 @@ services:
     volumes:
       - xray_config:/etc/xray_shared
       - /var/run/docker.sock:/var/run/docker.sock
-    configs:
-      - source: backend_env_config_v3
+    secrets:
+      - source: backend_env_config
         target: /app/backend/.env
-        mode: 0444
+        uid: "9000"
+        gid: "9000"
+        mode: 0440
     environment:
       - XRAY_CONTAINER_NAME=subsora-xray
       - XRAY_CONFIG_PATH=/etc/xray_shared/config.json
@@ -68,10 +70,12 @@ services:
 
   bot:
     image: cicd.zerity.ru:55000/subsora/bot:latest
-    configs:
+    secrets:
       - source: bot_env_config
         target: /app/.env
-        mode: 0444
+        uid: "9000"
+        gid: "9000"
+        mode: 0440
     deploy:
       restart_policy:
         condition: any
@@ -140,11 +144,13 @@ volumes:
     external: true
   xray_config:
 
-configs:
+secrets:
+  backend_env_config:
+    file: /root/subsora/.env
+    name: backend_env_config_0000000000000001
   bot_env_config:
     file: /root/subsora/bot/.env
-  backend_env_config_v3:
-    file: /root/subsora/.env
+    name: bot_env_config_00000000000000000001
 
 networks:
   subsora_network:
