@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import time # 👈 Импортируем time
@@ -26,7 +26,7 @@ async def prepare_purchase(
     """
     # ... (все твои проверки на активную подписку и план, они остаются здесь) ...
     result = await db.execute(select(Subscription).where(Subscription.user_id == user.id, # type: ignore
-                                                         Subscription.end_date > datetime.now(UTC)))
+                                                         Subscription.end_date > datetime.now(timezone.utc)))
     print(result)
     if result.scalars().first():
         raise HTTPException(status_code=400, detail="User already has an active subscription")
@@ -119,7 +119,7 @@ async def confirm_purchase(
     transaction.status = "completed"
 
     # 3. Создаем подписку в базе Subsora
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     new_sub = Subscription(
         user_id=transaction.user_id,
         plan_id=transaction.plan_id,

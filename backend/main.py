@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import IntegrityError
 
 from backend.app.api.router import api_router
-from app.core.config import settings
-from app.core.exceptions import database_exception_handler, validation_exception_handler
-from app.core.middleware import LoggingMiddleware
+from backend.app.core.config import settings
+from backend.app.core.exceptions import database_exception_handler, validation_exception_handler
+from backend.app.core.middleware import LoggingMiddleware
 import logging
 
 logging.basicConfig(
