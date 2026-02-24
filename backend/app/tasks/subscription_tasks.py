@@ -1,5 +1,5 @@
 from celery import Celery
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from backend.app.db.session import async_session
 from backend.app import crud
 
@@ -11,7 +11,7 @@ async def check_expired_subscriptions():
     """Проверяет истекшие подписки и отправляет уведомления"""
     async with async_session() as db:
         # Находим подписки, которые истекают завтра
-        tomorrow = datetime.now(UTC) + timedelta(days=1)
+        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
         expiring_subscriptions = await crud.subscription.get_expiring_subscriptions(
             db, expiring_date=tomorrow
         )

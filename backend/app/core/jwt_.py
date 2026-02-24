@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Any, Dict
 from jose import jwt, ExpiredSignatureError, JWTError
 from fastapi import HTTPException, status
@@ -9,7 +9,7 @@ def create_tokens(subject: str | Any) -> Dict[str, str]:
     """
     Создает ЕДИНУЮ пару access и refresh токенов для ЛЮБОГО клиента.
     """
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     # Access Token
     access_expire = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, Float, DateTime, String
 from sqlalchemy.orm import relationship
 from backend.app.db.base_class import Base
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 
 class Transaction(Base):
@@ -13,7 +13,7 @@ class Transaction(Base):
     plan_id = Column(Integer, ForeignKey("plans.id"), nullable=True)
     amount = Column(Float, nullable=False)
     currency = Column(String, default="USD")
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     status = Column(String, default="completed")  # pending, completed, failed
 
     user = relationship("User")
