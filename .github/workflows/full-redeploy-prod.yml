@@ -17,7 +17,6 @@ jobs:
       - name: Deploy
         run: |
           cd /home/deploy/subsora && git pull origin main
-          export $(cat .env | grep -v '^#' | xargs)
           docker stack rm subsora || true
           sleep 15
           docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
