@@ -23,6 +23,6 @@ jobs:
 
       - name: Deploy
         run: |
-          cd /home/deploy/subsora && git pull origin master
+          cd /home/deploy/subsora && git pull origin main
           docker stack deploy --with-registry-auth -c docker-compose.yml subsora
           docker service update --force --image cicd.zerity.ru:55443/subsora/bot:latest subsora_bot
