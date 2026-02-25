@@ -14,15 +14,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Login to registry
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login cicd.zerity.ru:55443 -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker localhost:55000 -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build and push
         run: |
-          docker build -t cicd.zerity.ru:55443/subsora/frontend:latest ./frontend
-          docker push cicd.zerity.ru:55443/subsora/frontend:latest
+          docker build -t localhost:55000/subsora/frontend:latest ./frontend
+          docker push localhost:55000/subsora/frontend:latest
 
       - name: Deploy
         run: |
           cd /home/deploy/subsora && git pull origin main
           docker stack deploy --with-registry-auth -c docker-compose.yml subsora
-          docker service update --force --image cicd.zerity.ru:55443/subsora/frontend:latest subsora_frontend
+          docker service update --force --image localhost:55000/subsora/frontend:latest subsora_frontend
