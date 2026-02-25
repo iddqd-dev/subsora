@@ -16,7 +16,7 @@ jobs:
 
       - name: Deploy
         run: |
-          cd /home/deploy/subsora && git pull origin master
+          cd /home/deploy/subsora && git pull origin main
           export $(cat .env | grep -v '^#' | xargs)
           docker stack rm subsora || true
           sleep 15
