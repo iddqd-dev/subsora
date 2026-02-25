@@ -1,0 +1,27 @@
+name: bot-prod
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'bot/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to registry
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login cicd.zerity.ru:55443 -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and push
+        run: |
+          docker build -t cicd.zerity.ru:55443/subsora/bot:latest ./bot
+          docker push cicd.zerity.ru:55443/subsora/bot:latest
+
+      - name: Deploy
+        run: |
+          cd /home/deploy/subsora && git pull origin master
+          docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+          docker service update --force --image cicd.zerity.ru:55443/subsora/bot:latest subsora_bot
