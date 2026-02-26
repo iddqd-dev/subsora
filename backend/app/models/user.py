@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, BigInteger
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import relationship
 
@@ -17,7 +17,7 @@ class User(Base):
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)  # Добавить
     is_superuser = Column(Boolean, default=False)  # Добавить
-    created_at =  Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))  # Добавить
+    created_at =  Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))  # Добавить
     referral_code = Column(String, unique=True, nullable=True)  # Добавить для реферальной системы
     telegram_id = Column(BigInteger, unique=True, index=True, nullable=True)
     subscription_url = Column(String, nullable=True)

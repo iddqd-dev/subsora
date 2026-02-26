@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from backend.app.crud.base import CRUDBase
 from backend.app.models.coupon import Coupon
@@ -15,7 +15,7 @@ class CRUDCoupon(CRUDBase[Coupon, CouponCreate, CouponUpdate]):
 
     async def validate_coupon(self, db: AsyncSession, *, code: str) -> Optional[Coupon]:
         """Проверяет валидность купона"""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         result = await db.execute(
             select(self.model).filter(
                 and_(

@@ -2,7 +2,7 @@ from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import selectinload
 
@@ -30,7 +30,7 @@ class CRUDSubscription(CRUDBase[Subscription, SubscriptionCreate, SubscriptionUp
 
     def _get_active_subscription_query(self, user_id: int):
         """Базовый запрос, который могут использовать другие методы."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         return select(self.model).filter(
             and_(
                 self.model.user_id == user_id,

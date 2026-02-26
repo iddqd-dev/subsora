@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from backend.app.db.base_class import Base
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 
 class Subscription(Base):
@@ -11,7 +11,7 @@ class Subscription(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     plan_id = Column(Integer, ForeignKey("plans.id"), nullable=False)
 
-    start_date = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    start_date = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     end_date = Column(DateTime(timezone=True), nullable=False)
 
     user = relationship("User", back_populates="subscriptions")

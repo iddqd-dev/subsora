@@ -1,0 +1,28 @@
+name: frontend-prod
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+  
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to registry
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login localhost:55000 -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and push
+        run: |
+          docker build -t localhost:55000/subsora/frontend:latest ./frontend
+          docker push localhost:55000/subsora/frontend:latest
+
+      - name: Deploy
+        run: |
+          cd /home/deploy/subsora && git pull origin main
+          docker stack deploy --with-registry-auth -c docker-compose.yml subsora
+          docker service update --force --image localhost:55000/subsora/frontend:latest subsora_frontend

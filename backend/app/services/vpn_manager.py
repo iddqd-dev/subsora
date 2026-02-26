@@ -11,7 +11,7 @@ from backend.app.core.config import settings
 from backend.app.models.user import User
 from backend.app.models.plan import Plan
 from backend.app.models.subscription import Subscription
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +118,7 @@ class VpnManager:
         """Генерация конфига и Hot Reload"""
         logger.info("🔄 Regenerating Xray config...")
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         query = (select(Subscription).join(User).where(Subscription.end_date > now))
         result = await db.execute(query)
         active_subs = result.scalars().all()

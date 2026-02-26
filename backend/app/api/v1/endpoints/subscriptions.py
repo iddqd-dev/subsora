@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 from backend.app import crud
 from backend.app.api.v1 import deps
@@ -39,7 +39,7 @@ async def create_subscription(
             detail=f"User already has an active subscription until {active_sub.end_date.date()}"
         )
 
-    start_date = datetime.now(UTC)
+    start_date = datetime.now(timezone.utc)
     end_date = start_date + timedelta(days=plan.duration_days)
 
     db_subscription_data = SubscriptionCreate(

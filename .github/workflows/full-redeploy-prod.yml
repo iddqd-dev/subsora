@@ -1,0 +1,23 @@
+name: full-redeploy-prod
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'docker-compose.yml'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy
+        run: |
+          cd /home/deploy/subsora && git pull origin main
+          docker stack rm subsora || true
+          sleep 15
+          docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
+          docker stack deploy -c docker-compose.yml subsora --with-registry-auth
