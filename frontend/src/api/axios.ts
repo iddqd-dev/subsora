@@ -7,7 +7,7 @@ const apiClient = axios.create({
   },
 });
 
-// --- Interceptor для запросов (уже есть) ---
+// --- Interceptor для запросов ---
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
