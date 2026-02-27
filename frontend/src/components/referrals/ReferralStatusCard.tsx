@@ -14,7 +14,7 @@ import {
     };
   }
   
-  export const ReferralStatusCard = ({ level, referralsCount, nextLevel, progress, savings }: Props) => (
+  const ReferralStatusCard = ({ level, referralsCount, nextLevel, progress, savings }: Props) => (
     <Card animation="disabled">
       <CardContent sx={{ p: { xs: 2, md: 3 } }}>
         {/* --- Верхний блок: Скидка и Аватар --- */}
@@ -104,3 +104,5 @@ import {
       </CardContent>
     </Card>
   );
+
+export default ReferralStatusCard;

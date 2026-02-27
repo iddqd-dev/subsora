@@ -6,7 +6,7 @@ interface Props {
   onCopy: () => void;
 }
 
-export const ReferralLinkCard = ({ referralLink, onCopy }: Props) => (
+const ReferralLinkCard = ({ referralLink, onCopy }: Props) => (
   <Card animation="disabled"> {/* Добавляем отключение анимации для этой карточки */}
     <CardContent sx={{ p: { xs: 2, md: 3 } }}>
       <Box
@@ -45,3 +45,5 @@ export const ReferralLinkCard = ({ referralLink, onCopy }: Props) => (
     </CardContent>
   </Card>
 );
+
+export default ReferralLinkCard;
