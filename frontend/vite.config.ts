@@ -1,20 +1,26 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { viteSingleFile } from 'vite-plugin-singlefile'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), viteSingleFile()],
+  plugins: [react()],
   server: {
     host: '0.0.0.0',
     port: 5173
   },
   build: {
-    target: 'esnext',
-    assetsInlineLimit: 100000000,
-    cssCodeSplit: false,
-  }
-})
-
-
-// Just CI trigger 4 build docker image
+      target: 'esnext',
+      cssCodeSplit: true,
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (id.includes('node_modules')) return 'vendor';
+            if (id.includes('/pages/')) {
+              const parts = id.split('/');
+              const name = parts[parts.length - 1].replace(/\.[jt]sx?$/, '');
+              return `page-${name}`;
+            }
+          }
+        }
+      }
+    }
+});

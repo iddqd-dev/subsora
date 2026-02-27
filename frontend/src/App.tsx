@@ -1,10 +1,16 @@
-import { Outlet } from 'react-router-dom';
+import React, { Suspense } from 'react';
+
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+const Profile = React.lazy(() => import('./pages/Profile'));
 
 function App() {
   return (
-    <div>
-      <Outlet />
-    </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <Dashboard />
+      <Settings />
+      <Profile />
+    </Suspense>
   );
 }
 
