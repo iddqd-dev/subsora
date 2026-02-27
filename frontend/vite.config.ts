@@ -28,6 +28,6 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 20, // предупреждение для больших чанков
+    chunkSizeWarningLimit: 10, // предупреждение для больших чанков
   }
 });
