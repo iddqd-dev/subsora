@@ -4,7 +4,7 @@ import {
   import { Security as SecurityIcon, CheckCircle as CheckIcon } from '@mui/icons-material';
   import type { Referral } from '../../types/referral'; // Предполагаем, что у вас есть такой тип
   
-  export const ReferralsTable = ({ referrals }: { referrals: Referral[] }) => (
+  const ReferralsTable = ({ referrals }: { referrals: Referral[] }) => (
     <Card>
       <CardContent sx={{ p: 0 }}>
         <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -56,3 +56,5 @@ import {
       </CardContent>
     </Card>
   );
+
+export default ReferralsTable;

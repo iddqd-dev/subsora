@@ -1,13 +1,33 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  server: {
-    host: '0.0.0.0',
-    port: 5173
-  }
-})
+  build: {
+    target: 'esnext',
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          // Все node_modules в отдельный чанк
+          if (id.includes('node_modules')) return 'vendor';
 
-// Just CI trigger 4 build docker image
+          // Каждая страница из pages/ в отдельный чанк
+          if (id.includes('/pages/')) {
+            const parts = id.split('/');
+            const name = parts[parts.length - 1].replace(/\.[jt]sx?$/, '');
+            return `page-${name}`;
+          }
+
+          // Каждый компонент из components/ в отдельный чанк
+          if (id.includes('/components/')) {
+            const parts = id.split('/');
+            const name = parts[parts.length - 1].replace(/\.[jt]sx?$/, '');
+            return `comp-${name}`;
+          }
+        }
+      }
+    },
+    chunkSizeWarningLimit: 10, // предупреждение для больших чанков
+  }
+});
