@@ -3,8 +3,8 @@ import { Container, Box, Typography, Stack, Snackbar, Alert, CircularProgress } 
 import { useAuth } from '../hooks/useAuth';
 import { useReferrals } from '../hooks/useReferrals';
 import { useReferralTiers } from '../hooks/useReferralTiers';
+import type { DiscountLevel } from './referrals/tier-mapper';
 
-// default imports — именно так экспортированы эти компоненты
 import ReferralStatusCard from '../components/referrals/ReferralStatusCard';
 import ReferralLinkCard from '../components/referrals/ReferralLinkCard';
 import ReferralsTable from '../components/referrals/ReferralsTable';
