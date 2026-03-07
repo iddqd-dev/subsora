@@ -19,6 +19,9 @@ services:
         protocol: tcp
         mode: host
     deploy:
+      update_config:
+        order: stop-first
+        delay: 5s
       restart_policy:
         condition: any
         delay: 5s
@@ -58,10 +61,11 @@ services:
         delay: 5s
         max_attempts: 3
       update_config:
+        order: stop-first
         parallelism: 1
         delay: 10s
         failure_action: rollback
-        order: stop-first
+
     depends_on:
       - db
     command: ["sh", "-c", "echo 'Waiting for database...' && until nc -z db 5432; do echo 'Database not ready, waiting...'; sleep 2; done && echo 'Database is ready!' && alembic -c /app/backend/alembic.ini upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
@@ -77,6 +81,9 @@ services:
         gid: "9000"
         mode: 0440
     deploy:
+      update_config:
+        order: stop-first
+        delay: 5s
       restart_policy:
         condition: any
     depends_on:
@@ -96,6 +103,9 @@ services:
         protocol: tcp
         mode: host
     deploy:
+      update_config:
+        order: stop-first
+        delay: 5s
       restart_policy:
         condition: any
     networks:
@@ -111,6 +121,9 @@ services:
     volumes:
       - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
     deploy:
+      update_config:
+        order: stop-first
+        delay: 5s
       restart_policy:
         condition: any
     depends_on:
@@ -134,6 +147,9 @@ services:
     environment:
       - XRAY_LOCATION_ASSET=/usr/share/xray/
     deploy:
+      update_config:
+        order: stop-first
+        delay: 5s
       restart_policy:
         condition: any
     networks:
