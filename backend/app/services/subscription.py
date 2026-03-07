@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-import time # 👈 Импортируем time
-import logging # 👈 Импортируем logging
-
+from sqlalchemy import select, delete, or_
+import time  # 👈 Импортируем time
+import logging  # 👈 Импортируем logging
 
 from backend.app import crud
 from backend.app.core.config import settings
-from backend.app.models import User, Plan, Subscription, Transaction
+from backend.app.models import User, Plan, Subscription, Transaction, Referral
 from backend.app.schemas.subscription import SubscriptionCreateRequest
 from fastapi import HTTPException
 from backend.app.services.vpn_manager import VpnManager
@@ -172,3 +171,75 @@ async def confirm_purchase(
         raise HTTPException(status_code=500, detail="Could not retrieve created subscription")
 
     return full_subscription
+
+
+async def revoke_subscription(
+        subscription_id: int,
+        db: AsyncSession,
+) -> Subscription:
+    """
+    Отзывает подписку:
+    - завершает её немедленно (end_date = now),
+    - убирает пользователя из рантайма Xray (revoke доступа),
+    - НЕ удаляет ни пользователя, ни историю подписок/транзакций из БД.
+    """
+    subscription = await crud.subscription.get(db, _id=subscription_id)
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+
+    user = await crud.user.get(db, _id=subscription.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User for this subscription not found")
+
+    now = datetime.now(timezone.utc)
+    if subscription.end_date > now:
+        subscription.end_date = now
+        db.add(subscription)
+
+    async with VpnManager() as vpn:
+        # Отзываем доступ в рантайме, не трогая сущность пользователя.
+        await vpn.drop_user_from_xray_runtime(user)
+
+    await db.commit()
+    await db.refresh(subscription)
+    return subscription
+
+
+async def delete_user_completely(
+        user_id: int,
+        db: AsyncSession,
+) -> None:
+    """
+    Полное удаление пользователя:
+    - удаляет пользователя из рантайма Xray,
+    - удаляет все его подписки, транзакции и реферальные связи,
+    - удаляет саму запись пользователя из БД.
+    """
+    user = await crud.user.get(db, _id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # 1. Чистим рантайм Xray (если нужно полностью снести доступ)
+    async with VpnManager() as vpn:
+        await vpn.drop_user_from_xray_runtime(user)
+
+    # 2. Удаляем реферальные связи
+    await db.execute(
+        delete(Referral).where(
+            or_(
+                Referral.referrer_id == user_id,
+                Referral.referred_id == user_id,
+            )
+        )
+    )
+
+    # 3. Удаляем транзакции пользователя
+    await db.execute(delete(Transaction).where(Transaction.user_id == user_id))
+
+    # 4. Удаляем подписки пользователя
+    await db.execute(delete(Subscription).where(Subscription.user_id == user_id))
+
+    # 5. Удаляем самого пользователя
+    await db.delete(user)
+
+    await db.commit()

@@ -8,6 +8,9 @@ from backend.app.core.exceptions import database_exception_handler, validation_e
 from backend.app.core.middleware import LoggingMiddleware
 import logging
 
+from backend.app.db.session import async_session
+from backend.app.services.vpn_manager import VpnManager
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -34,4 +37,13 @@ app.add_exception_handler(ValueError, validation_exception_handler) # type: igno
 
 app.include_router(api_router)
 
-# Just CI trigger 4 build docker image
+
+@app.on_event("startup")
+async def sync_xray_on_startup() -> None:
+    """
+    При старте backend синхронизируем Xray с актуальными подписками из БД.
+    """
+    async with async_session() as db:
+        async with VpnManager() as vpn:
+            await vpn.sync_active_users(db)
+
