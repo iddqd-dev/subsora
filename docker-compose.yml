@@ -35,7 +35,7 @@ services:
       start_period: 10s
 
   backend:
-    image: cicd.zerity.ru:55000/subsora/backend:latest
+    image: localhost:5000/subsora/backend:latest
     pid: host
     ports:
       - target: 8000
@@ -73,7 +73,7 @@ services:
       - subsora_network
 
   bot:
-    image: cicd.zerity.ru:55000/subsora/bot:latest
+    image: localhost:5000/subsora/bot:latest
     secrets:
       - source: bot_env_config
         target: /app/.env
@@ -92,7 +92,7 @@ services:
       - subsora_network
 
   frontend:
-    image: cicd.zerity.ru:55000/subsora/frontend:latest
+    image: localhost:5000/subsora/frontend:latest
     ports:
       - target: 80
         published: 48080

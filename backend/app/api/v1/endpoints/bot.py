@@ -23,8 +23,6 @@ class BotPurchaseRequest(BaseModel):
 
 # --- Зависимость для проверки секретного токена ---
 async def verify_bot_token(x_bot_token: str = Header(..., description="Секретный токен для аутентификации бота")):
-    print(x_bot_token)
-    print(settings.TELEGRAM_BOT_SECRET)
     if x_bot_token != settings.TELEGRAM_BOT_SECRET:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid bot token")
 

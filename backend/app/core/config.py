@@ -17,10 +17,10 @@ class Settings(BaseSettings):
         (5, 3),
     ]
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@domain:5432/subsora"
+    DATABASE_URL: str = None
 
     # Security
-    JWT_SECRET_KEY: str = "supersecret"
+    JWT_SECRET_KEY: str = None
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
@@ -42,25 +42,27 @@ class Settings(BaseSettings):
 
     # Environment
     ENVIRONMENT: str = "development"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
 
     VPN_PANEL_URL: str = "https://domain.com"
     VPN_PANEL_PORT: int = 8002
-    VPN_PANEL_USER: str = "admin"
-    VPN_PANEL_PASSWORD: str = "password"
+    VPN_PANEL_USER: str = None
+    VPN_PANEL_PASSWORD: str = None
     VPN_PANEL_SSL: bool = True
 
     # Telegram bot - обязательные поля
-    TELEGRAM_BOT_TOKEN: str = "123"
-    TELEGRAM_BOT_SECRET: str = "123"
+    TELEGRAM_BOT_TOKEN: str = None
+    TELEGRAM_BOT_SECRET: str = None
 
     class Config:
+        def __init__(self):
+            pass
+
         # Используем .env файл
         env_file = ENV_FILE_PATH
-        print(env_file)
         case_sensitive = True
         # Приоритет переменным окружения над .env файлом
         env_file_encoding = 'utf-8'

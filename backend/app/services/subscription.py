@@ -24,11 +24,33 @@ async def prepare_purchase(
     - Возвращает созданную транзакцию.
     """
     # ... (все твои проверки на активную подписку и план, они остаются здесь) ...
-    result = await db.execute(select(Subscription).where(Subscription.user_id == user.id, # type: ignore
-                                                         Subscription.end_date > datetime.now(timezone.utc)))
-    print(result)
+    await db.execute(
+        select(User).where(User.id == user.id).with_for_update()
+    )
+
+    now = datetime.now(timezone.utc)
+    result = await db.execute(
+        select(Subscription).where(
+            Subscription.user_id == user.id,  # type: ignore
+            Subscription.end_date > now
+        )
+    )
     if result.scalars().first():
         raise HTTPException(status_code=400, detail="User already has an active subscription")
+
+    pending_result = await db.execute(
+        select(Transaction)
+        .where(
+            Transaction.user_id == user.id,
+            Transaction.plan_id == request.plan_id,
+            Transaction.status == "pending"
+        )
+        .order_by(Transaction.created_at.desc())
+        .limit(1)
+    )
+    existing_pending = pending_result.scalars().first()
+    if existing_pending:
+        return existing_pending
 
     plan = await db.get(Plan, request.plan_id)
     if not plan or not plan.is_active:
