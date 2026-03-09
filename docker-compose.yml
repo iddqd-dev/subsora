@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:14.8-alpine3.18
@@ -19,24 +17,28 @@ services:
         protocol: tcp
         mode: host
     deploy:
+      replicas: 1
       update_config:
+        parallelism: 1
         order: stop-first
         delay: 5s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: stop-first
       restart_policy:
         condition: any
         delay: 5s
         max_attempts: 3
-      replicas: 1
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d subsora" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d subsora"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
   backend:
-    image: localhost:5000/subsora/backend:latest
-    pid: host
+    image: localhost:55000/subsora/backend:latest
     ports:
       - target: 8000
         published: 48000
@@ -52,47 +54,65 @@ services:
         gid: "9000"
         mode: 0440
     environment:
-      - XRAY_CONTAINER_NAME=subsora-xray
-      - XRAY_CONFIG_PATH=/etc/xray_shared/config.json
+      XRAY_CONFIG_PATH: /etc/xray_shared/config.json
+      XRAY_SERVICE_NAME: xray
+    command:
+      [
+        "sh",
+        "-c",
+        "echo 'Waiting for database...' && until nc -z db 5432; do echo 'Database not ready, waiting...'; sleep 2; done && echo 'Database is ready!' && alembic -c /app/backend/alembic.ini upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+      ]
+    networks:
+      - subsora_network
+    depends_on:
+      - db
     deploy:
+      replicas: 1
       endpoint_mode: dnsrr
+      update_config:
+        parallelism: 1
+        order: stop-first
+        delay: 10s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: stop-first
       restart_policy:
         condition: any
         delay: 5s
         max_attempts: 3
-      update_config:
-        order: stop-first
-        parallelism: 1
-        delay: 10s
-        failure_action: rollback
-
-    depends_on:
-      - db
-    command: ["sh", "-c", "echo 'Waiting for database...' && until nc -z db 5432; do echo 'Database not ready, waiting...'; sleep 2; done && echo 'Database is ready!' && alembic -c /app/backend/alembic.ini upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
-    networks:
-      - subsora_network
 
   bot:
-    image: localhost:5000/subsora/bot:latest
+    image: localhost:55000/subsora/bot:latest
     secrets:
       - source: bot_env_config
         target: /app/.env
         uid: "9000"
         gid: "9000"
         mode: 0440
-    deploy:
-      update_config:
-        order: stop-first
-        delay: 5s
-      restart_policy:
-        condition: any
-    depends_on:
-      - backend
     networks:
       - subsora_network
+    depends_on:
+      - backend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: stop-first
+        delay: 5s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
 
   frontend:
-    image: localhost:5000/subsora/frontend:latest
+    image: localhost:55000/subsora/frontend:latest
+    networks:
+      - subsora_network
     ports:
       - target: 80
         published: 48080
@@ -103,62 +123,88 @@ services:
         protocol: tcp
         mode: host
     deploy:
+      replicas: 1
       update_config:
+        parallelism: 1
         order: stop-first
         delay: 5s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: stop-first
       restart_policy:
         condition: any
-    networks:
-      - subsora_network
+        delay: 5s
+        max_attempts: 3
 
   nginx-proxy:
     image: nginx:1.25-alpine
+    networks:
+      - subsora_network
     ports:
       - target: 80
         published: 48081
         protocol: tcp
         mode: host
-    volumes:
-      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
-    deploy:
-      update_config:
-        order: stop-first
-        delay: 5s
-      restart_policy:
-        condition: any
+    configs:
+      - source: nginx_proxy_conf
+        target: /etc/nginx/conf.d/default.conf
     depends_on:
       - frontend
       - backend
-    networks:
-      - subsora_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: stop-first
+        delay: 5s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
 
   xray:
     image: ghcr.io/xtls/xray-core:latest
-    container_name: subsora-xray
     hostname: xray
     volumes:
       - xray_config:/etc/xray
-      - ./xray_logs:/var/log/xray
+      - /home/deploy/subsora/xray_logs:/var/log/xray
     ports:
       - target: 443
         published: 443
         protocol: tcp
         mode: host
     environment:
-      - XRAY_LOCATION_ASSET=/usr/share/xray/
-    deploy:
-      update_config:
-        order: stop-first
-        delay: 5s
-      restart_policy:
-        condition: any
+      XRAY_LOCATION_ASSET: /usr/share/xray/
     networks:
       - subsora_network
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: stop-first
+        delay: 5s
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
 
 volumes:
   postgres_data:
     external: true
   xray_config:
+
+configs:
+  nginx_proxy_conf:
+    file: /home/deploy/subsora/nginx.conf
 
 secrets:
   backend_env_config:
