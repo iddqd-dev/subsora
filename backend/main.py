@@ -43,7 +43,11 @@ async def sync_xray_on_startup() -> None:
     """
     При старте backend синхронизируем Xray с актуальными подписками из БД.
     """
-    async with async_session() as db:
-        async with VpnManager() as vpn:
-            await vpn.sync_active_users(db)
+    try:
+        async with async_session() as db:
+            async with VpnManager() as vpn:
+                await vpn.sync_active_users(db)
+    except Exception as exc:
+        # Do not fail API startup if Xray sync is temporarily unavailable.
+        logging.getLogger(__name__).exception("Xray startup sync failed: %s", exc)
 

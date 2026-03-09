@@ -66,9 +66,10 @@ class VpnManager:
         self.default_flow = "xtls-rprx-vision"
 
         # Ключи и параметры для генерации VLESS‑линка
-        self.private_key = settings.XRAY_PRIVATE_KEY
-        self.public_key = settings.XRAY_PUBLIC_KEY
-        self.short_ids = [settings.XRAY_SHORT_ID] if hasattr(settings, "XRAY_SHORT_ID") else [""]
+        self.private_key = getattr(settings, "XRAY_PRIVATE_KEY", None)
+        self.public_key = getattr(settings, "XRAY_PUBLIC_KEY", None)
+        short_id = getattr(settings, "XRAY_SHORT_ID", None)
+        self.short_ids = [short_id] if short_id else [""]
         self.server_names = ["yahoo.com", "www.yahoo.com"]
         self.dest = "yahoo.com:443"
 
