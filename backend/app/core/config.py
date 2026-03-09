@@ -57,6 +57,16 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = None
     TELEGRAM_BOT_SECRET: str = None
 
+    # Настройки для Native Xray
+    # Путь внутри контейнера
+    XRAY_CONFIG_PATH: str = None
+    XRAY_PROCESS_NAME: str = None
+
+    # Ключи Reality
+    XRAY_PRIVATE_KEY: str = None
+    XRAY_PUBLIC_KEY: str = None
+    XRAY_SHORT_ID: str = None
+
     class Config:
         def __init__(self):
             pass
