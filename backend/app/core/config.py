@@ -1,9 +1,28 @@
 import os
+from typing import List, Optional, Tuple
+
 from pydantic_settings import BaseSettings
-from typing import Optional, List, Tuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-ENV_FILE_PATH = "/app/backend/.env"
+
+
+def resolve_env_file_path() -> str:
+    explicit_env_file = os.getenv("SETTINGS_ENV_FILE")
+    if explicit_env_file:
+        return explicit_env_file
+
+    environment = os.getenv("ENVIRONMENT", "development").lower()
+    if environment == "production":
+        return os.path.join(BASE_DIR, ".env")
+
+    dev_path = os.path.join(BASE_DIR, ".env.dev")
+    if os.path.exists(dev_path):
+        return dev_path
+
+    return os.path.join(BASE_DIR, ".env")
+
+
+ENV_FILE_PATH = resolve_env_file_path()
 
 
 class Settings(BaseSettings):
@@ -16,11 +35,12 @@ class Settings(BaseSettings):
         (15, 5),
         (5, 3),
     ]
+
     # Database
-    DATABASE_URL: str = None
+    DATABASE_URL: Optional[str] = None
 
     # Security
-    JWT_SECRET_KEY: str = None
+    JWT_SECRET_KEY: Optional[str] = None
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
@@ -49,34 +69,28 @@ class Settings(BaseSettings):
 
     VPN_PANEL_URL: str = "https://domain.com"
     VPN_PANEL_PORT: int = 8002
-    VPN_PANEL_USER: str = None
-    VPN_PANEL_PASSWORD: str = None
+    VPN_PANEL_USER: Optional[str] = None
+    VPN_PANEL_PASSWORD: Optional[str] = None
     VPN_PANEL_SSL: bool = True
 
-    # Telegram bot - обязательные поля
-    TELEGRAM_BOT_TOKEN: str = None
-    TELEGRAM_BOT_SECRET: str = None
+    # Telegram bot
+    TELEGRAM_BOT_TOKEN: Optional[str] = None
+    TELEGRAM_BOT_SECRET: Optional[str] = None
 
-    # Настройки для Native Xray
-    # Путь внутри контейнера
-    XRAY_CONFIG_PATH: str = None
-    XRAY_PROCESS_NAME: str = None
+    # Native Xray settings
+    XRAY_CONFIG_PATH: Optional[str] = None
+    XRAY_PROCESS_NAME: Optional[str] = None
 
-    # Ключи Reality
-    XRAY_PRIVATE_KEY: str = None
-    XRAY_PUBLIC_KEY: str = None
-    XRAY_SHORT_ID: str = None
+    # Reality keys
+    XRAY_PRIVATE_KEY: Optional[str] = None
+    XRAY_PUBLIC_KEY: Optional[str] = None
+    XRAY_SHORT_ID: Optional[str] = None
 
     class Config:
-        def __init__(self):
-            pass
-
-        # Используем .env файл
         env_file = ENV_FILE_PATH
         case_sensitive = True
-        # Приоритет переменным окружения над .env файлом
-        env_file_encoding = 'utf-8'
-        extra = 'ignore'
+        env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 settings = Settings()
