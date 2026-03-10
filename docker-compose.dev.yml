@@ -122,7 +122,7 @@ services:
     hostname: xray
     volumes:
       - xray_config:/etc/xray
-      - ./xray_logs:/var/log/xray
+      - xray_logs:/var/log/xray
     ports:
       - target: 443
         published: 8443
@@ -140,6 +140,7 @@ volumes:
   postgres_data:
     external: true
   xray_config:
+  xray_logs:
 
 configs:
   bot_env_config:

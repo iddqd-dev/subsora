@@ -172,7 +172,7 @@ services:
     hostname: xray
     volumes:
       - xray_config:/etc/xray
-      - /home/deploy/subsora/xray_logs:/var/log/xray
+      - xray_logs:/var/log/xray
     ports:
       - target: 443
         published: 443
@@ -201,6 +201,7 @@ volumes:
   postgres_data:
     external: true
   xray_config:
+  xray_logs:
 
 configs:
   nginx_proxy_conf:
