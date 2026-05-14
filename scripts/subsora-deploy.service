@@ -1,0 +1,29 @@
+[Unit]
+Description=Subsora Deployment Webhook Handler
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/subsora/scripts
+ExecStart=/usr/bin/python3 deploy-webhook-handler.py
+
+# Environment variables
+EnvironmentFile=/opt/subsora/.deploy.env
+
+# Auto-restart
+Restart=always
+RestartSec=10
+
+# Resource limits
+MemoryLimit=256M
+CPUQuota=50%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=deploy-webhook
+
+[Install]
+WantedBy=multi-user.target

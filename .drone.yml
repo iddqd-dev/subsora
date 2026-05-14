@@ -4,35 +4,79 @@ name: backend-prod
 platform:
   os: linux
   arch: amd64
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    ports:
+      - 2375
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "backend/"; then echo "No changes in backend/"; exit 78; fi
-  - name: build-push
-    image: docker:dind
-    privileged: true
+  
+  - name: lint
+    image: python:3.11-alpine
+    working_dir: /workspace/backend
     commands:
-      - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
-      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      - docker build -t cicd.zerity.ru:55000/subsora/backend:latest ./backend
-      - docker push cicd.zerity.ru:55000/subsora/backend:latest
+      - pip install -q flake8 black isort
+      - black --check .
+      - isort --check-only .
+      - flake8 . --max-line-length=120 --extend-ignore=E203,W503
+    volumes:
+      - name: workspace
+        path: /workspace
+  
+  - name: unit-tests
+    image: python:3.11-alpine
+    working_dir: /workspace/backend
+    commands:
+      - pip install -q pytest pytest-cov
+      - pip install -q -r requirements.txt
+      - pytest tests/ -v --cov=app --cov-report=xml
+    volumes:
+      - name: workspace
+        path: /workspace
+  
+  - name: build-push
+    image: docker:latest
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
-  - name: deploy
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host }
-      username: { from_secret: ssh_user }
-      key: { from_secret: ssh_key }
-      script:
-        - cd /root/subsora && git pull origin master
-        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
-        - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:latest subsora_backend
+    commands:
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      - docker build -t cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA:0:8} -t cicd.zerity.ru:55000/subsora/backend:latest ./backend
+      - docker push cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA:0:8}
+      - docker push cicd.zerity.ru:55000/subsora/backend:latest
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: scan-vulnerabilities
+    image: aquasec/trivy:latest
+    commands:
+      - trivy image --severity HIGH,CRITICAL cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA:0:8}
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: deploy-webhook
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_WEBHOOK: { from_secret: deploy_webhook_backend_prod }
+    commands:
+      - curl -X POST $DEPLOY_WEBHOOK -H "Content-Type: application/json" -d "{\"image\":\"cicd.zerity.ru:55000/subsora/backend:${DRONE_COMMIT_SHA:0:8}\"}"
 trigger:
   branch: [main, master]
   event: [push]
+
+volumes:
+  - name: workspace
+    temp: {}
+  - name: docker_socket
+    host:
+      path: /var/run/docker.sock
 ---
 kind: pipeline
 type: docker
@@ -40,35 +84,66 @@ name: frontend-prod
 platform:
   os: linux
   arch: amd64
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    ports:
+      - 2375
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "frontend/"; then exit 78; fi
-  - name: build-push
-    image: docker:dind
-    privileged: true
+  
+  - name: lint
+    image: node:18-alpine
+    working_dir: /workspace/frontend
     commands:
-      - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
-      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      - docker build -t cicd.zerity.ru:55000/subsora/frontend:latest ./frontend
-      - docker push cicd.zerity.ru:55000/subsora/frontend:latest
+      - npm ci --legacy-peer-deps
+      - npm run lint
+    volumes:
+      - name: workspace
+        path: /workspace
+  
+  - name: build-push
+    image: docker:latest
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
-  - name: deploy
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host }
-      username: { from_secret: ssh_user }
-      key: { from_secret: ssh_key }
-      script:
-        - cd /root/subsora && git pull origin master
-        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
-        - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:latest subsora_frontend
+    commands:
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      - docker build -t cicd.zerity.ru:55000/subsora/frontend:${DRONE_COMMIT_SHA:0:8} -t cicd.zerity.ru:55000/subsora/frontend:latest ./frontend
+      - docker push cicd.zerity.ru:55000/subsora/frontend:${DRONE_COMMIT_SHA:0:8}
+      - docker push cicd.zerity.ru:55000/subsora/frontend:latest
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: scan-vulnerabilities
+    image: aquasec/trivy:latest
+    commands:
+      - trivy image --severity HIGH,CRITICAL cicd.zerity.ru:55000/subsora/frontend:${DRONE_COMMIT_SHA:0:8}
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: deploy-webhook
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_WEBHOOK: { from_secret: deploy_webhook_frontend_prod }
+    commands:
+      - curl -X POST $DEPLOY_WEBHOOK -H "Content-Type: application/json" -d "{\"image\":\"cicd.zerity.ru:55000/subsora/frontend:${DRONE_COMMIT_SHA:0:8}\"}"
 trigger:
   branch: [main, master]
   event: [push]
+
+volumes:
+  - name: workspace
+    temp: {}
+  - name: docker_socket
+    host:
+      path: /var/run/docker.sock
 ---
 kind: pipeline
 type: docker
@@ -76,35 +151,68 @@ name: bot-prod
 platform:
   os: linux
   arch: amd64
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    ports:
+      - 2375
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "bot/"; then exit 78; fi
-  - name: build-push
-    image: docker:dind
-    privileged: true
+  
+  - name: lint
+    image: python:3.11-alpine
+    working_dir: /workspace/bot
     commands:
-      - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
-      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      - docker build -t cicd.zerity.ru:55000/subsora/bot:latest ./bot
-      - docker push cicd.zerity.ru:55000/subsora/bot:latest
+      - pip install -q flake8 black isort
+      - black --check .
+      - isort --check-only .
+      - flake8 . --max-line-length=120 --extend-ignore=E203,W503
+    volumes:
+      - name: workspace
+        path: /workspace
+  
+  - name: build-push
+    image: docker:latest
     environment:
       DOCKER_USERNAME: { from_secret: docker_username }
       DOCKER_PASSWORD: { from_secret: docker_password }
-  - name: deploy
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host }
-      username: { from_secret: ssh_user }
-      key: { from_secret: ssh_key }
-      script:
-        - cd /root/subsora && git pull origin master
-        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
-        - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:latest subsora_bot
+    commands:
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      - docker build -t cicd.zerity.ru:55000/subsora/bot:${DRONE_COMMIT_SHA:0:8} -t cicd.zerity.ru:55000/subsora/bot:latest ./bot
+      - docker push cicd.zerity.ru:55000/subsora/bot:${DRONE_COMMIT_SHA:0:8}
+      - docker push cicd.zerity.ru:55000/subsora/bot:latest
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: scan-vulnerabilities
+    image: aquasec/trivy:latest
+    commands:
+      - trivy image --severity HIGH,CRITICAL cicd.zerity.ru:55000/subsora/bot:${DRONE_COMMIT_SHA:0:8}
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: deploy-webhook
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_WEBHOOK: { from_secret: deploy_webhook_bot_prod }
+    commands:
+      - curl -X POST $DEPLOY_WEBHOOK -H "Content-Type: application/json" -d "{\"image\":\"cicd.zerity.ru:55000/subsora/bot:${DRONE_COMMIT_SHA:0:8}\"}"
 trigger:
   branch: [main, master]
   event: [push]
+
+volumes:
+  - name: workspace
+    temp: {}
+  - name: docker_socket
+    host:
+      path: /var/run/docker.sock
 ---
 kind: pipeline
 type: docker
@@ -117,19 +225,18 @@ steps:
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -qE "(docker-compose.yml|.drone.yml)"; then exit 78; fi
-  - name: deploy
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host }
-      username: { from_secret: ssh_user }
-      key: { from_secret: ssh_key }
-      script:
-        - cd /root/subsora && git pull origin master
-        - export $(cat .env | grep -v '^#' | xargs)
-        - docker stack rm subsora || true
-        - sleep 15
-        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
-        - docker stack deploy -c docker-compose.yml subsora --with-registry-auth
+  
+  - name: validate-compose
+    image: docker/compose:latest
+    commands:
+      - docker-compose config -f docker-compose.yml
+  
+  - name: deploy-webhook
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_WEBHOOK: { from_secret: deploy_webhook_full_prod }
+    commands:
+      - curl -X POST $DEPLOY_WEBHOOK -H "Content-Type: application/json" -d "{\"type\":\"full-redeploy\",\"commit\":\"${DRONE_COMMIT_SHA}\"}"
 trigger:
   branch: [main, master]
   event: [push]
@@ -140,36 +247,71 @@ name: backend-dev
 platform:
   os: linux
   arch: arm64
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    ports:
+      - 2375
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "backend/"; then exit 78; fi
-  - name: build-push
-    image: docker:dind
-    privileged: true
+  
+  - name: lint
+    image: python:3.11-alpine
+    working_dir: /workspace/backend
     commands:
-      - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
-      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      - docker build -t cicd.zerity.ru:55000/subsora/backend:dev ./backend
-      - docker push cicd.zerity.ru:55000/subsora/backend:dev
+      - pip install -q flake8 black isort
+      - black --check .
+      - isort --check-only .
+      - flake8 . --max-line-length=120 --extend-ignore=E203,W503
+    volumes:
+      - name: workspace
+        path: /workspace
+  
+  - name: unit-tests
+    image: python:3.11-alpine
+    working_dir: /workspace/backend
+    commands:
+      - pip install -q pytest pytest-cov
+      - pip install -q -r requirements.txt
+      - pytest tests/ -v --cov=app --cov-report=xml
+    volumes:
+      - name: workspace
+        path: /workspace
+  
+  - name: build-push
+    image: docker:latest
     environment:
       DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
       DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
-  - name: deploy
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host_dev }
-      port: 55522
-      username: { from_secret: ssh_user_dev }
-      key: { from_secret: ssh_key_dev }
-      script:
-        - cd /opt/subsora && git checkout dev && git pull origin dev
-        - docker stack deploy --with-registry-auth -c docker-compose.yml subsora
-        - docker service update --force --image cicd.zerity.ru:55000/subsora/backend:dev subsora_backend
+    commands:
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      - docker build -t cicd.zerity.ru:55000/subsora/backend:dev-${DRONE_COMMIT_SHA:0:8} -t cicd.zerity.ru:55000/subsora/backend:dev ./backend
+      - docker push cicd.zerity.ru:55000/subsora/backend:dev-${DRONE_COMMIT_SHA:0:8}
+      - docker push cicd.zerity.ru:55000/subsora/backend:dev
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: deploy-webhook
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_WEBHOOK: { from_secret: deploy_webhook_backend_dev }
+    commands:
+      - curl -X POST $DEPLOY_WEBHOOK -H "Content-Type: application/json" -d "{\"image\":\"cicd.zerity.ru:55000/subsora/backend:dev-${DRONE_COMMIT_SHA:0:8}\"}"
 trigger:
   branch: [dev]
   event: [push]
+
+volumes:
+  - name: workspace
+    temp: {}
+  - name: docker_socket
+    host:
+      path: /var/run/docker.sock
 ---
 kind: pipeline
 type: docker
@@ -177,36 +319,58 @@ name: frontend-dev
 platform:
   os: linux
   arch: arm64
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    ports:
+      - 2375
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "frontend/"; then exit 78; fi
-  - name: build-push
-    image: docker:dind
-    privileged: true
+  
+  - name: lint
+    image: node:18-alpine
+    working_dir: /workspace/frontend
     commands:
-      - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
-      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      - docker build -t cicd.zerity.ru:55000/subsora/frontend:dev ./frontend
-      - docker push cicd.zerity.ru:55000/subsora/frontend:dev
+      - npm ci --legacy-peer-deps
+      - npm run lint
+    volumes:
+      - name: workspace
+        path: /workspace
+  
+  - name: build-push
+    image: docker:latest
     environment:
       DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
       DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
-  - name: deploy
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host_dev }
-      port: 55522
-      username: { from_secret: ssh_user_dev }
-      key: { from_secret: ssh_key_dev }
-      script:
-        - cd /opt/subsora && git checkout dev && git pull origin dev
-        - docker stack deploy --with-registry-auth -c docker-compose.dev.yml subsora
-        - docker service update --force --image cicd.zerity.ru:55000/subsora/frontend:dev subsora_frontend
+    commands:
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      - docker build -t cicd.zerity.ru:55000/subsora/frontend:dev-${DRONE_COMMIT_SHA:0:8} -t cicd.zerity.ru:55000/subsora/frontend:dev ./frontend
+      - docker push cicd.zerity.ru:55000/subsora/frontend:dev-${DRONE_COMMIT_SHA:0:8}
+      - docker push cicd.zerity.ru:55000/subsora/frontend:dev
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: deploy-webhook
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_WEBHOOK: { from_secret: deploy_webhook_frontend_dev }
+    commands:
+      - curl -X POST $DEPLOY_WEBHOOK -H "Content-Type: application/json" -d "{\"image\":\"cicd.zerity.ru:55000/subsora/frontend:dev-${DRONE_COMMIT_SHA:0:8}\"}"
 trigger:
   branch: [dev]
   event: [push]
+
+volumes:
+  - name: workspace
+    temp: {}
+  - name: docker_socket
+    host:
+      path: /var/run/docker.sock
 ---
 kind: pipeline
 type: docker
@@ -214,36 +378,60 @@ name: bot-dev
 platform:
   os: linux
   arch: arm64
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    ports:
+      - 2375
 steps:
   - name: check-changes
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -q "bot/"; then exit 78; fi
-  - name: build-push
-    image: docker:dind
-    privileged: true
+  
+  - name: lint
+    image: python:3.11-alpine
+    working_dir: /workspace/bot
     commands:
-      - dockerd --host=unix:///var/run/docker.sock --tls=false & sleep 10
-      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
-      - docker build -t cicd.zerity.ru:55000/subsora/bot:dev ./bot
-      - docker push cicd.zerity.ru:55000/subsora/bot:dev
+      - pip install -q flake8 black isort
+      - black --check .
+      - isort --check-only .
+      - flake8 . --max-line-length=120 --extend-ignore=E203,W503
+    volumes:
+      - name: workspace
+        path: /workspace
+  
+  - name: build-push
+    image: docker:latest
     environment:
       DOCKER_USERNAME: { from_secret: DOCKER_USERNAME }
       DOCKER_PASSWORD: { from_secret: DOCKER_PASSWORD }
-  - name: deploy
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host_dev }
-      port: 55522
-      username: { from_secret: ssh_user_dev }
-      key: { from_secret: ssh_key_dev }
-      script:
-        - cd /opt/subsora && git checkout dev && git pull origin dev
-        - docker stack deploy --with-registry-auth -c docker-compose.dev.yml subsora
-        - docker service update --force --image cicd.zerity.ru:55000/subsora/bot:dev subsora_bot
+    commands:
+      - echo $DOCKER_PASSWORD | docker login cicd.zerity.ru:55000 -u $DOCKER_USERNAME --password-stdin
+      - docker build -t cicd.zerity.ru:55000/subsora/bot:dev-${DRONE_COMMIT_SHA:0:8} -t cicd.zerity.ru:55000/subsora/bot:dev ./bot
+      - docker push cicd.zerity.ru:55000/subsora/bot:dev-${DRONE_COMMIT_SHA:0:8}
+      - docker push cicd.zerity.ru:55000/subsora/bot:dev
+    volumes:
+      - name: docker_socket
+        path: /var/run/docker.sock
+  
+  - name: deploy-webhook
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_WEBHOOK: { from_secret: deploy_webhook_bot_dev }
+    commands:
+      - curl -X POST $DEPLOY_WEBHOOK -H "Content-Type: application/json" -d "{\"image\":\"cicd.zerity.ru:55000/subsora/bot:dev-${DRONE_COMMIT_SHA:0:8}\"}"
 trigger:
   branch: [dev]
   event: [push]
+
+volumes:
+  - name: workspace
+    temp: {}
+  - name: docker_socket
+    host:
+      path: /var/run/docker.sock
 ---
 kind: pipeline
 type: docker
@@ -256,20 +444,18 @@ steps:
     image: alpine/git
     commands:
       - if ! git diff --name-only ${DRONE_COMMIT_BEFORE} ${DRONE_COMMIT_SHA} | grep -qE "(docker-compose.yml|docker-compose.dev.yml|.drone.yml)"; then exit 78; fi
-  - name: deploy
-    image: appleboy/drone-ssh
-    settings:
-      host: { from_secret: ssh_host_dev }
-      port: 55522
-      username: { from_secret: ssh_user_dev }
-      key: { from_secret: ssh_key_dev }
-      script:
-        - cd /opt/subsora && git checkout dev && git pull origin dev
-        - export $(cat .env | grep -v '^#' | xargs)
-        - docker stack rm subsora || true
-        - sleep 15
-        - docker network inspect subsora_network >/dev/null 2>&1 || docker network create --driver overlay --attachable subsora_network
-        - docker stack deploy -c docker-compose.dev.yml subsora --with-registry-auth
+  
+  - name: validate-compose
+    image: docker/compose:latest
+    commands:
+      - docker-compose config -f docker-compose.dev.yml
+  
+  - name: deploy-webhook
+    image: curlimages/curl:latest
+    environment:
+      DEPLOY_WEBHOOK: { from_secret: deploy_webhook_full_dev }
+    commands:
+      - curl -X POST $DEPLOY_WEBHOOK -H "Content-Type: application/json" -d "{\"type\":\"full-redeploy\",\"commit\":\"${DRONE_COMMIT_SHA}\"}"
 trigger:
   branch: [dev]
   event: [push]
